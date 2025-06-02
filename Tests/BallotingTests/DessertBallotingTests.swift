@@ -43,19 +43,11 @@ let rawRankings = [
     return RankedBallot(id: index, rankings: ranks)
 }
 
-@MainActor let election = RankedElection<String, Int>(candidates: candidates, ballots: ballots)
+@MainActor let election = RankedElection(candidates: candidates, ballots: ballots)
 
 
 @Test func example() async throws {
-    let ballots = rawRankings.enumerated().map { (index, rankings) in
-        let ranks = rankings.components(separatedBy: ", ").enumerated().map { (index, rank) in
-            let rank = Int(rank)!
-            return RankedBallot<Int, String>.CandidateRanking(candidate: candidates[index], rank: rank == 0 ? nil : rank)
-        }
-        return RankedBallot(id: index, rankings: ranks)
-    }
-
-    let results = try CondorcetResult(ballots: ballots)
+    let results = try await CondorcetResult(ballots: ballots)
     print(results.description)
 }
 
@@ -77,4 +69,15 @@ let rawRankings = [
 @MainActor
 @Test func description() async throws {
     print(election)
+}
+
+@MainActor
+@Test func codableRoundTrip() async throws {
+    let encoder = JSONEncoder()
+    let decoder = JSONDecoder()
+    
+    let data = try encoder.encode(election)
+    let roundTripElection = try decoder.decode(RankedElection<Int, String>.self, from: data)
+    
+    #expect(election == roundTripElection)
 }

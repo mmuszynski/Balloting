@@ -17,14 +17,24 @@ fileprivate extension String {
     }
 }
 
-struct RankedElection<CandidateID: CandidateIdentifiable, BallotID: BallotIdentifiable> {
+/// Describes an election using a ranked ballot
+///
+/// This struct describes the parts of an election that uses a ranked, unweighted balloting system. In this type of election, a slate of candidates is given a ranking from most preferred to least preferred on a given number of ballots. This struct is generic across a number of dimensions, including the way candidates are identified (see `CandidateIdentifiable`) and the way ballots are identified (see `BallotIdentifiable`). This should allow ballots and candidates to conform to the Identifiable protocol required of most SwiftUI views.
+///
+/// Further, `RankedElection` conforms to the `Codable` protocol, allowing it to be serialized and unserialized. There is a custom application of `Decodable` and `Encodable` in order to pack the information tighter than the standard syntesized conformance.
+struct RankedElection<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable> {
     typealias Ballot = RankedBallot<BallotID, CandidateID>
     
     var candidates: [CandidateID]
     var ballots: [Ballot]
 }
 
+/*
+ The synthesized encoding process resulted in a lot of duplicate information (for example, the ID of every candidate was included in every ballot). This implementation packs the information into a tighter form, but requires that a few more steps happen. In the end, there will be two main parts encoded: the list of canidates (sorted by their default), and the rankings provided on each ballot, sorted in the same order as the candidates.
+ */
 extension RankedElection: Codable {
+    typealias EncodedBallots = [BallotID: [Int?]]
+    
     enum CodingKeys: CodingKey {
         case candidates
         case encodedBallots
@@ -34,7 +44,7 @@ extension RankedElection: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(candidates, forKey: .candidates)
         
-        var encodedBallots = [BallotID: [Int?]]()
+        var encodedBallots = EncodedBallots()
         try ballots.forEach { ballot in
             encodedBallots[ballot.id] = try ballot.orderedRankings(by: candidates).map(\.rank)
         }
@@ -43,7 +53,22 @@ extension RankedElection: Codable {
     }
     
     init(from decoder: any Decoder) throws {
-        fatalError()
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let candidates = try container.decode(Array<CandidateID>.self, forKey: .candidates)
+        let encodedBallots = try container.decode(EncodedBallots.self, forKey: .encodedBallots)
+        
+        let ballots = try encodedBallots.map { (ballotID, rankings) in
+            try Ballot(id: ballotID, rankings: rankings.enumerated().map { (index, rank) in
+                guard index < candidates.count else {
+                    throw CandidateError.couldNotFindCandidate
+                }
+                let candidateID = candidates[index]
+                return Ballot.CandidateRanking(candidate: candidateID, rank: rank)
+            })
+        }
+        
+        self.candidates = candidates
+        self.ballots = ballots
     }
 }
 
@@ -52,7 +77,7 @@ extension RankedElection: CustomStringConvertible {
         var returnValue = "Election\r"
         
         //append Candidate IDs
-        let candidatesHeader = candidates.map(String.init(describing:)).joined(separator: ", ")
+        let candidatesHeader = candidates.map(String.init(describing:)).sorted().joined(separator: ", ")
         returnValue += "ID, " + " " + candidatesHeader + "\r"
         
         do {
@@ -61,7 +86,7 @@ extension RankedElection: CustomStringConvertible {
                 .sorted(by: { $0.id < $1.id })
                 .map { theBallot in
                     let id = String(describing: theBallot.id)
-                    let ballot = try theBallot.orderedRankings(by: candidates).map(\.rank).map(String.init(describingAndUnwrapping:)).joined(separator: ", ")
+                    let ballot = try theBallot.orderedRankings(by: candidates.sorted()).map(\.rank).map(String.init(describingAndUnwrapping:)).joined(separator: ", ")
                     return id + ": " + ballot
                 }
                 .joined(separator: "\r")
@@ -70,5 +95,11 @@ extension RankedElection: CustomStringConvertible {
         }
         
         return returnValue
+    }
+}
+
+extension RankedElection: Equatable {
+    static func ==(lhs: RankedElection, rhs: RankedElection) -> Bool {
+        return lhs.description == rhs.description
     }
 }

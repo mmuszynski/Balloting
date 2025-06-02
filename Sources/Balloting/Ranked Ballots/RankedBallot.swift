@@ -8,15 +8,15 @@
 import Foundation
 
 /// Represents a ranking of candidates. No error checking takes place to make sure that the ballot uses the correct number of rankings.
-struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Identifiable {
+struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Identifiable, Sendable {
     /// Contains a ranking and a candidate ID. If a candidate is unranked, the ranking will be nil.
     struct CandidateRanking: Codable {
         var candidate: CandidateID        
         var rank: Int?
     }
     
-    var id: BallotID
-    var rankings: [CandidateRanking]
+    let id: BallotID
+    let rankings: [CandidateRanking]
     
     subscript(_ candidate: CandidateID) -> CandidateRanking? {
         rankings.first { $0.candidate == candidate }

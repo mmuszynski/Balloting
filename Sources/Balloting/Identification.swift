@@ -7,12 +7,13 @@
 
 import Foundation
 
-protocol CandidateIdentifiable: Equatable & Hashable & Comparable & Codable {}
+protocol CandidateIdentifiable: Equatable & Hashable & Comparable & Codable & Sendable {}
 
 extension String: CandidateIdentifiable {}
 extension Int: CandidateIdentifiable {}
 
-protocol BallotIdentifiable: Hashable & Comparable & Codable {}
+protocol BallotIdentifiable: Hashable & Comparable & Codable & Sendable {}
 
 extension String: BallotIdentifiable {}
 extension Int: BallotIdentifiable {}
+extension Date: BallotIdentifiable {}
