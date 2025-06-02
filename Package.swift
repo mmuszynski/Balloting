@@ -20,7 +20,8 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "BallotingTests",
-            dependencies: ["Balloting"]
+            dependencies: ["Balloting"],
+            resources: [.process("Resources")]
         ),
     ]
 )
