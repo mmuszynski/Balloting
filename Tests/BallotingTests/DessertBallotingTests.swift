@@ -43,7 +43,7 @@ let rawRankings = [
     return RankedBallot(id: index, rankings: ranks)
 }
 
-@MainActor let election = RankedElection(candidates: candidates, ballots: ballots)
+@MainActor let election = RankedElection(candidates: Set(candidates), ballots: Set(ballots))
 
 
 @Test func example() async throws {

@@ -9,4 +9,5 @@ import Foundation
 
 enum CandidateError: Error {
     case couldNotFindCandidate
+    case noCandidatesProvided
 }
