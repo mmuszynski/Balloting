@@ -25,8 +25,13 @@ fileprivate extension String {
 struct RankedElection<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable> {
     typealias Ballot = RankedBallot<BallotID, CandidateID>
     
-    var candidates: [CandidateID]
-    var ballots: [Ballot]
+    var candidates: Set<CandidateID>
+    var ballots: Set<Ballot>
+    
+    func irvRound(ingoring eliminated: Set<CandidateID>) throws -> IRVRound<BallotID, CandidateID> {
+        let candidates = candidates.subtracting(eliminated)
+        return try IRVRound(ballots: self.ballots, candidates: candidates)
+    }
 }
 
 /*
@@ -46,7 +51,7 @@ extension RankedElection: Codable {
         
         var encodedBallots = EncodedBallots()
         try ballots.forEach { ballot in
-            encodedBallots[ballot.id] = try ballot.orderedRankings(by: candidates).map(\.rank)
+            encodedBallots[ballot.id] = try ballot.orderedRankings(by: candidates.sorted()).map(\.rank)
         }
 
         try container.encode(encodedBallots, forKey: .encodedBallots)
@@ -54,7 +59,7 @@ extension RankedElection: Codable {
     
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let candidates = try container.decode(Array<CandidateID>.self, forKey: .candidates)
+        let candidates = try container.decode(Array<CandidateID>.self, forKey: .candidates).sorted()
         let encodedBallots = try container.decode(EncodedBallots.self, forKey: .encodedBallots)
         
         let ballots = try encodedBallots.map { (ballotID, rankings) in
@@ -67,8 +72,8 @@ extension RankedElection: Codable {
             })
         }
         
-        self.candidates = candidates
-        self.ballots = ballots
+        self.candidates = Set(candidates)
+        self.ballots = Set(ballots)
     }
 }
 

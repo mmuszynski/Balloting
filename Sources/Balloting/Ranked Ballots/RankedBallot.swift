@@ -63,6 +63,21 @@ struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifi
             return firstIndex < secondIndex
         }
     }
+    
+    /// The candidate with the highest ranking on this ballot
+    /// - Parameter candidates: An array of candidates to use in the ranking (all others will be ignored)
+    /// - Returns: The `CandidateID` for the candidate who is ranked highest, or nil if no such candidate exists
+    func highestRankedCandidate(using candidates: [CandidateID]) throws -> CandidateID? {
+        try candidatesOrderedByRank(using: candidates).first?.candidate
+    }
+    
+    /// Orders the candidates by rank, ignoring unranked candidates on the ballot and removing candidates who belong to the eliminated array
+    /// - Parameter candidates: An array of candidates to use in the ranking (all others will be ignored)
+    /// - Returns: A list of candidate rankings, ordered by preference and ignoring candidates that are not in the candidates array
+    func candidatesOrderedByRank(using candidates: [CandidateID]) throws -> [CandidateRanking] {
+        if candidates.isEmpty { throw CandidateError.noCandidatesProvided }
+        return Array(rankings.filter { $0.rank != nil }.filter { candidates.contains($0.candidate) }.sorted { $0.rank! < $1.rank! })
+    }
 }
 
 extension RankedBallot: CustomStringConvertible {
@@ -70,5 +85,17 @@ extension RankedBallot: CustomStringConvertible {
         "Ballot (\(id))\r" + rankings.reduce("", { partialResult, ranking in
             partialResult + "\(ranking.candidate),\(ranking.rank == nil ? "unranked" : String(describing: ranking.rank!))\r"
         })
+    }
+}
+
+extension RankedBallot: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(self.id)
+    }
+}
+
+extension RankedBallot: Equatable {
+    static func == (lhs: RankedBallot, rhs: RankedBallot) -> Bool {
+        return lhs.id == rhs.id
     }
 }
