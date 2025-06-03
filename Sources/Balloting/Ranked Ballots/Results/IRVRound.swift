@@ -7,6 +7,16 @@
 
 import Foundation
 
+fileprivate extension String {
+    init<T>(describingAndUnwrapping optional: T?) {
+        if let optional {
+            self = String(describing: optional)
+        } else {
+            self = String(describing: optional)
+        }
+    }
+}
+
 /// Describes the counting of a round of Instant Runoff Voting
 ///
 ///
@@ -41,5 +51,15 @@ struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable
     
     subscript(_ candidate: CandidateID) -> Int? {
         return voteCount[candidate]
+    }
+}
+
+extension IRVRound: CustomStringConvertible {
+    var description: String {
+        voteCount.sorted(by: {
+            $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value
+        }).map {
+            String(describingAndUnwrapping: $0.key) + ": " + String(describingAndUnwrapping: $0.value)
+        }.joined(separator: ", ")
     }
 }

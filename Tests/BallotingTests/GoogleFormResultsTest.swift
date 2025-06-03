@@ -78,5 +78,12 @@ struct GoogleFormResultsTest {
     
     @Test func irv() async throws {
         let firstResult = try election.irvRound(ingoring: [])
+        #expect(firstResult["Chocolate Cake"] == 10)
+        #expect(firstResult["Carrot Cake"] == 7)
+        #expect(firstResult["Cheesecake"] == 4)
+        #expect(firstResult["Pumpkin Pie"] == 4)
+        #expect(firstResult["Apple Pie"] == 3)
+        #expect(firstResult["Angelfood Cake"] == 0)
+        #expect(firstResult.description == "Chocolate Cake: 10, Carrot Cake: 7, Cheesecake: 4, Pumpkin Pie: 4, Apple Pie: 3, Angelfood Cake: 0")
     }
 }
