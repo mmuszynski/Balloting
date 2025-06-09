@@ -23,5 +23,10 @@ let package = Package(
             dependencies: ["Balloting"],
             resources: [.process("Resources")]
         ),
+        .executableTarget(
+            name: "Profiling",
+            dependencies: ["Balloting"],
+            resources: [.process("Resources")]
+        )
     ]
 )

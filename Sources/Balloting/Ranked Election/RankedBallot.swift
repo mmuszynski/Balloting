@@ -8,18 +8,24 @@
 import Foundation
 
 /// Represents a ranking of candidates. No error checking takes place to make sure that the ballot uses the correct number of rankings.
-struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Identifiable, Sendable {
+public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Election, Identifiable, Sendable {
     /// Contains a ranking and a candidate ID. If a candidate is unranked, the ranking will be nil.
-    struct CandidateRanking: Codable {
-        var candidate: CandidateID        
+    public struct CandidateRanking: Codable, Sendable {
+        var candidate: CandidateID
         var rank: Int?
+        
+        public init(candidate: CandidateID, rank: Int? = nil) {
+            self.candidate = candidate
+            self.rank = rank
+        }
     }
     
-    let id: BallotID
-    let rankings: [CandidateRanking]
+    public let id: BallotID
+    public let rankings: [CandidateRanking]
     
-    subscript(_ candidate: CandidateID) -> CandidateRanking? {
-        rankings.first { $0.candidate == candidate }
+    public init(id: BallotID, rankings: [CandidateRanking]) {
+        self.id = id
+        self.rankings = rankings.filter { $0.rank != nil }.sorted(by: { $0.rank! < $1.rank! })
     }
     
     /// Calculates a preference for a given candidate on this ballot
@@ -47,8 +53,8 @@ struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifi
     }
     
     func comparison(between candidate1: CandidateID, and candidate2: CandidateID) throws -> CandidateComparison {
-        guard let firstRanking = self[candidate1] else { throw CandidateError.couldNotFindCandidate }
-        guard let secondRanking = self[candidate2] else { throw CandidateError.couldNotFindCandidate }
+        let firstRanking = self[candidate1] ?? CandidateRanking(candidate: candidate1, rank: nil)
+        let secondRanking = self[candidate2] ?? CandidateRanking(candidate: candidate2, rank: nil)
         return CandidateComparison(candidate1Ranking: firstRanking, candidate2Ranking: secondRanking)
     }
     
@@ -76,12 +82,13 @@ struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifi
     /// - Returns: A list of candidate rankings, ordered by preference and ignoring candidates that are not in the candidates array
     func candidatesOrderedByRank(using candidates: [CandidateID]) throws -> [CandidateRanking] {
         if candidates.isEmpty { throw CandidateError.noCandidatesProvided }
-        return Array(rankings.filter { $0.rank != nil }.filter { candidates.contains($0.candidate) }.sorted { $0.rank! < $1.rank! })
+        //return rankings.filter { $0.rank != nil }.filter { candidates.contains($0.candidate) }.sorted { $0.rank! < $1.rank! }
+        return rankings.filter { candidates.contains($0.candidate) }
     }
 }
 
 extension RankedBallot: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         "Ballot (\(id))\r" + rankings.reduce("", { partialResult, ranking in
             partialResult + "\(ranking.candidate),\(ranking.rank == nil ? "unranked" : String(describing: ranking.rank!))\r"
         })
@@ -89,13 +96,37 @@ extension RankedBallot: CustomStringConvertible {
 }
 
 extension RankedBallot: Hashable {
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(self.id)
     }
 }
 
 extension RankedBallot: Equatable {
-    static func == (lhs: RankedBallot, rhs: RankedBallot) -> Bool {
+    public static func == (lhs: RankedBallot, rhs: RankedBallot) -> Bool {
         return lhs.id == rhs.id
+    }
+}
+
+extension RankedBallot: Collection {
+    public typealias Index = Array<CandidateRanking>.Index
+    
+    public func index(after i: Index) -> Index {
+        rankings.index(after: i)
+    }
+    
+    public var startIndex: Index {
+        rankings.startIndex
+    }
+    
+    public var endIndex: Index {
+        rankings.endIndex
+    }
+    
+    public subscript(index: Index) -> CandidateRanking {
+        rankings[index]
+    }
+    
+    public subscript(_ candidate: CandidateID) -> CandidateRanking? {
+        rankings.first { $0.candidate == candidate }
     }
 }

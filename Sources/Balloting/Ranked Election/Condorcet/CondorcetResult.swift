@@ -43,10 +43,6 @@ struct CondorcetResult<CandidateID: CandidateIdentifiable, BallotID: BallotIdent
                 let candidate1Wins = preferences.count(where: { $0.winner == candidate1 })
                 let candidate2Wins = preferences.count(where: { $0.winner == candidate2 })
                 let draws = preferences.filter { $0.winner == nil }
-
-                if !draws.isEmpty {
-                    print(draws)
-                }
                 
                 let theResult = (wins1: candidate1Wins, wins2: candidate2Wins, draws: draws.count)
                 results["\(candidate1):\(candidate2)"] = theResult
@@ -75,8 +71,8 @@ extension CondorcetResult: CustomStringConvertible {
         
         var returnValue = "\t"
         
-        for canidate in candidates {
-            returnValue += "\(canidate)\t"
+        for candidate in candidates {
+            returnValue += "\(candidate)\t"
         }
         for candidate2 in candidates {
             returnValue += "\n\(candidate2)\t"

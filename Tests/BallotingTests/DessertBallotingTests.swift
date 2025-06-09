@@ -47,8 +47,10 @@ let rawRankings = [
 
 
 @Test func example() async throws {
-    let results = try await CondorcetResult(ballots: ballots)
-    print(results.description)
+    await #expect(throws: Never.self) {
+        let _ = try await CondorcetResult(ballots: ballots)
+        //print(results.description)
+    }
 }
 
 @Test func drawBallot() async throws {
@@ -61,14 +63,14 @@ let rawRankings = [
 @Test func codable() async throws {
     let encoder = JSONEncoder()
     #expect(throws: Never.self) {
-        let data = try encoder.encode(election)
-        print(String(data: data, encoding: .utf8)!)
+        let _ = try encoder.encode(election)
+        //print(String(data: data, encoding: .utf8)!)
     }
 }
 
 @MainActor
 @Test func description() async throws {
-    print(election)
+    //print(election)
 }
 
 @MainActor
@@ -80,4 +82,7 @@ let rawRankings = [
     let roundTripElection = try decoder.decode(RankedElection<Int, String>.self, from: data)
     
     #expect(election == roundTripElection)
+    
+    //output data if necessary
+    print(String(data: data, encoding: .utf8))
 }

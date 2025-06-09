@@ -77,13 +77,62 @@ struct GoogleFormResultsTest {
     }
     
     @Test func irv() async throws {
-        let firstResult = try election.irvRound(ingoring: [])
-        #expect(firstResult["Chocolate Cake"] == 10)
-        #expect(firstResult["Carrot Cake"] == 7)
-        #expect(firstResult["Cheesecake"] == 4)
-        #expect(firstResult["Pumpkin Pie"] == 4)
-        #expect(firstResult["Apple Pie"] == 3)
-        #expect(firstResult["Angelfood Cake"] == 0)
-        #expect(firstResult.description == "Chocolate Cake: 10, Carrot Cake: 7, Cheesecake: 4, Pumpkin Pie: 4, Apple Pie: 3, Angelfood Cake: 0")
+        let roundOne = try election.irvRound(ignoring: [])
+        #expect(roundOne["Chocolate Cake"] == 10)
+        #expect(roundOne["Carrot Cake"] == 7)
+        #expect(roundOne["Cheesecake"] == 4)
+        #expect(roundOne["Pumpkin Pie"] == 4)
+        #expect(roundOne["Apple Pie"] == 3)
+        #expect(roundOne["Angelfood Cake"] == 0)
+        #expect(roundOne.description == "Chocolate Cake: 10, Carrot Cake: 7, Cheesecake: 4, Pumpkin Pie: 4, Apple Pie: 3, Angelfood Cake: 0")
+        
+        let roundTwo = try election.irvRound(ignoring: ["Angelfood Cake"])
+        #expect(roundTwo["Chocolate Cake"] == 10)
+        #expect(roundTwo["Carrot Cake"] == 7)
+        #expect(roundTwo["Cheesecake"] == 4)
+        #expect(roundTwo["Pumpkin Pie"] == 4)
+        #expect(roundTwo["Apple Pie"] == 3)
+        #expect(roundTwo["Angelfood Cake"] == nil)
+        
+        let roundThree = try election.irvRound(ignoring: ["Angelfood Cake", "Apple Pie"])
+        #expect(roundThree["Chocolate Cake"] == 11)
+        #expect(roundThree["Carrot Cake"] == 8)
+        #expect(roundThree["Cheesecake"] == 5)
+        #expect(roundThree["Pumpkin Pie"] == 4)
+        #expect(roundThree["Apple Pie"] == nil)
+        #expect(roundThree["Angelfood Cake"] == nil)
+        
+        let roundFour = try election.irvRound(ignoring: ["Angelfood Cake", "Apple Pie", "Pumpkin Pie"])
+        #expect(roundFour["Chocolate Cake"] == 11)
+        #expect(roundFour["Carrot Cake"] == 12)
+        #expect(roundFour["Cheesecake"] == 5)
+        #expect(roundFour["Pumpkin Pie"] == nil)
+        #expect(roundFour["Apple Pie"] == nil)
+        #expect(roundFour["Angelfood Cake"] == nil)
+        
+        let roundFive = try election.irvRound(ignoring: ["Angelfood Cake", "Apple Pie", "Pumpkin Pie", "Cheesecake"])
+        #expect(roundFive["Chocolate Cake"] == 12)
+        #expect(roundFive["Carrot Cake"] == 16)
+        #expect(roundFive["Cheesecake"] == nil)
+        #expect(roundFive["Pumpkin Pie"] == nil)
+        #expect(roundFive["Apple Pie"] == nil)
+        #expect(roundFive["Angelfood Cake"] == nil)
+    }
+    
+    @Test
+    func autoIRV() async throws {
+        var winner: String? = nil
+        var eliminated: Set<String> = []
+        while winner == nil {
+            let round = try election.irvRound(ignoring: eliminated)
+            winner = round.majorityCandidate
+            
+            if let eliminationCandidate = round.eliminationCandidate(using: .random) {
+                eliminated.insert(eliminationCandidate)
+            } else {
+                print("Could not get lowest candidate")
+            }
+        }
+        #expect(winner == "Carrot Cake")
     }
 }
