@@ -15,6 +15,6 @@ struct CondorcetTests {
     
     @Test
     func condorcetResult() async throws {
-        election.condorcetResult()
+        try election.condorcetResult()
     }
 }

@@ -48,6 +48,11 @@ public struct RankedElection<BallotID: BallotIdentifiable, CandidateID: Candidat
         let candidates = candidates.subtracting(eliminated)
         return try IRVRound(ballots: self.ballots, candidates: candidates)
     }
+    
+    public func condorcetResult() throws -> CondorcetResult<CandidateID, BallotID> {
+        try CondorcetResult(ballots: Array(ballots))
+    }
+
 }
 
 /*

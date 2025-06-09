@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CondorcetResult<CandidateID: CandidateIdentifiable, BallotID: BallotIdentifiable> {
+public struct CondorcetResult<CandidateID: CandidateIdentifiable, BallotID: BallotIdentifiable> {
     typealias Ballot = RankedBallot<BallotID, CandidateID>
     
     let ballots: [Ballot]
@@ -66,7 +66,7 @@ struct CondorcetResult<CandidateID: CandidateIdentifiable, BallotID: BallotIdent
 }
 
 extension CondorcetResult: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         let candidates = candidates.sorted(by: <)
         
         var returnValue = "\t"

@@ -39,7 +39,7 @@ struct MinneapolisMayorTest {
         #expect(throws: Never.self) { try Self.init() }
         
         var winner: String? = nil
-        var eliminated: Set<String> = []
+        let eliminated: Set<String> = []
         let round = try election.irvRound(ignoring: eliminated)
         winner = round.majorityCandidate
         #expect(winner == "RYB")
