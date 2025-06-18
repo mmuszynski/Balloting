@@ -28,6 +28,12 @@ public struct RankedElection<BallotID: BallotIdentifiable, CandidateID: Candidat
     public var candidates: Set<CandidateID>
     public var ballots: Set<Ballot>
     
+    public var name: String = ""
+    public var detailDescription: String = ""
+    
+    public var beginDate: Date?
+    public var endDate: Date?
+    
     /// Initalizes a `RankedElection` with the provided candidates and ballots. Generates a candidate list if none is provided.
     ///
     /// - Parameters:

@@ -105,9 +105,7 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
     }
     
     public func sortedByRank() -> [CandidateRanking] {
-        rankings.sorted { (ranking1, ranking2) -> Bool in
-            ranking1.rank ?? Int.max < ranking2.rank ?? Int.max
-        }
+        self.rankings.sorted(by: { $0.rank ?? Int.max < $1.rank ?? Int.max })
     }
 }
 
@@ -156,7 +154,7 @@ extension RankedBallot: Collection {
 }
 
 extension RankedBallot: Comparable {
-    public static func < (lhs: RankedBallot<BallotID, CandidateID>, rhs: RankedBallot<BallotID, CandidateID>) -> Bool {
+    public static func < (lhs: RankedBallot, rhs: RankedBallot) -> Bool {
         lhs.id < rhs.id
     }
 }

@@ -7,4 +7,10 @@
 
 import Foundation
 
-public protocol Election: Sendable, Codable {}
+public protocol Election: Sendable, Codable {
+    var beginDate: Date? { get }
+    var endDate: Date? { get }
+    
+    var name: String { get }
+    var detailDescription: String { get }
+}
