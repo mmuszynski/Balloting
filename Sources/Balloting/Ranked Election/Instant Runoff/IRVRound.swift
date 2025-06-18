@@ -54,7 +54,7 @@ public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdent
         try tally()
     }
     
-    /// The function that does the actual counting. Assumes that the choices on the ballot are sorted by rank.
+    /// The function that does the actual counting. Will initally sort the ballot by rank.
     /// - Parameter num: The number of positions to be filled by the election
     mutating func tally(forNumPositions num: Int = 1) throws {
         for candidate in candidates {
@@ -62,7 +62,8 @@ public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdent
         }
         
         for ballot in ballots {
-            if let candidate = ballot.rankings.first(where: { candidates.contains($0.candidate) } )?.candidate {
+            let rankings = ballot.sortedByRank()
+            if let candidate = rankings.first(where: { candidates.contains($0.candidate) } )?.candidate {
                 self.incrementVote(for: candidate)
             }
         }

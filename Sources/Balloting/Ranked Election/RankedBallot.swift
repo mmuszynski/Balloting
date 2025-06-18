@@ -8,11 +8,13 @@
 import Foundation
 
 /// Represents a ranking of candidates. No error checking takes place to make sure that the ballot uses the correct number of rankings.
-public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Election, Identifiable, Sendable {
+public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Ballot, Identifiable, Sendable {
     /// Contains a ranking and a candidate ID. If a candidate is unranked, the ranking will be nil.
-    public struct CandidateRanking: Codable, Sendable {
-        var candidate: CandidateID
-        var rank: Int?
+    public struct CandidateRanking: Codable, Sendable, Identifiable {
+        public var id: CandidateID { candidate }
+        
+        public var candidate: CandidateID
+        public var rank: Int?
         
         public init(candidate: CandidateID, rank: Int? = nil) {
             self.candidate = candidate
@@ -21,11 +23,27 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
     }
     
     public let id: BallotID
-    public let rankings: [CandidateRanking]
+    public var rankings: [CandidateRanking]
+    
+    /// Initializes a ballot with a given set of candidates and their rankings all set to nil.
+    /// - Parameters:
+    ///   - id: The unique identifier for the ballot
+    ///   - candidates: The list of candidates
+    static func blank(id: BallotID, candidates: [CandidateID]) -> Ballot {
+        RankedBallot<BallotID, CandidateID>(id: id, rankings: candidates.map { CandidateRanking(candidate: $0) })
+    }
     
     public init(id: BallotID, rankings: [CandidateRanking]) {
         self.id = id
-        self.rankings = rankings.filter { $0.rank != nil }.sorted(by: { $0.rank! < $1.rank! })
+        self.rankings = rankings
+    }
+    
+    public mutating func sortByCandidate() {
+        self.rankings.sort { $0.candidate < $1.candidate }
+    }
+    
+    public mutating func sortByRanking() {
+        self.rankings = self.sortedByRank()
     }
     
     /// Calculates a preference for a given candidate on this ballot
@@ -85,6 +103,12 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
         //return rankings.filter { $0.rank != nil }.filter { candidates.contains($0.candidate) }.sorted { $0.rank! < $1.rank! }
         return rankings.filter { candidates.contains($0.candidate) }
     }
+    
+    public func sortedByRank() -> [CandidateRanking] {
+        rankings.sorted { (ranking1, ranking2) -> Bool in
+            ranking1.rank ?? Int.max < ranking2.rank ?? Int.max
+        }
+    }
 }
 
 extension RankedBallot: CustomStringConvertible {
@@ -128,5 +152,11 @@ extension RankedBallot: Collection {
     
     public subscript(_ candidate: CandidateID) -> CandidateRanking? {
         rankings.first { $0.candidate == candidate }
+    }
+}
+
+extension RankedBallot: Comparable {
+    public static func < (lhs: RankedBallot<BallotID, CandidateID>, rhs: RankedBallot<BallotID, CandidateID>) -> Bool {
+        lhs.id < rhs.id
     }
 }

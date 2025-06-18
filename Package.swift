@@ -11,6 +11,9 @@ let package = Package(
         .library(
             name: "Balloting",
             targets: ["Balloting"]),
+        .executable(
+            name: "BallotingExampleApp",
+            targets: ["BallotingExampleApp"])
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -24,7 +27,7 @@ let package = Package(
             resources: [.process("Resources")]
         ),
         .executableTarget(
-            name: "Profiling",
+            name: "BallotingExampleApp",
             dependencies: ["Balloting"],
             resources: [.process("Resources")]
         )

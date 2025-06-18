@@ -22,11 +22,11 @@ fileprivate extension String {
 /// This struct describes the parts of an election that uses a ranked, unweighted balloting system. In this type of election, a slate of candidates is given a ranking from most preferred to least preferred on a given number of ballots. This struct is generic across a number of dimensions, including the way candidates are identified (see `CandidateIdentifiable`) and the way ballots are identified (see `BallotIdentifiable`). This should allow ballots and candidates to conform to the Identifiable protocol required of most SwiftUI views.
 ///
 /// Further, `RankedElection` conforms to the `Codable` protocol, allowing it to be serialized and unserialized. There is a custom application of `Decodable` and `Encodable` in order to pack the information tighter than the standard syntesized conformance.
-public struct RankedElection<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable> {
+public struct RankedElection<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Election, Sendable {
     public typealias Ballot = RankedBallot<BallotID, CandidateID>
     
-    var candidates: Set<CandidateID>
-    var ballots: Set<Ballot>
+    public var candidates: Set<CandidateID>
+    public var ballots: Set<Ballot>
     
     /// Initalizes a `RankedElection` with the provided candidates and ballots. Generates a candidate list if none is provided.
     ///
