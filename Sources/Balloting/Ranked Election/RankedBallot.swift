@@ -107,6 +107,17 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
     public func sortedByRank() -> [CandidateRanking] {
         self.rankings.sorted(by: { $0.rank ?? Int.max < $1.rank ?? Int.max })
     }
+    
+    /// Counts the number of vote rankings that are ignored
+    /// - Parameter candidates: The candidates to use for counting
+    /// - Returns: The number of candidates that were not selected in the ranking process
+    public func undervoteCount(using candidates: [CandidateID]) -> Int {
+        self.rankings.count(where: { $0.rank == nil && candidates.contains($0.candidate) })
+    }
+    
+    public var textualDescription: String {
+        rankings.sorted { $0.candidate < $1.candidate }.map { String($0.rank ?? 0) }.joined(separator: " ")
+    }
 }
 
 extension RankedBallot: CustomStringConvertible {
