@@ -22,11 +22,11 @@ fileprivate extension String {
 /// This struct describes the parts of an election that uses a ranked, unweighted balloting system. In this type of election, a slate of candidates is given a ranking from most preferred to least preferred on a given number of ballots. This struct is generic across a number of dimensions, including the way candidates are identified (see `CandidateIdentifiable`) and the way ballots are identified (see `BallotIdentifiable`). This should allow ballots and candidates to conform to the Identifiable protocol required of most SwiftUI views.
 ///
 /// Further, `RankedElection` conforms to the `Codable` protocol, allowing it to be serialized and unserialized. There is a custom application of `Decodable` and `Encodable` in order to pack the information tighter than the standard syntesized conformance.
-public struct RankedElection<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Election, Sendable {
-    public typealias Ballot = RankedBallot<BallotID, CandidateID>
+public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Election, Sendable {
+    public typealias Ballot = RankedBallot<BallotID, C>
     
-    public var candidates: Set<CandidateID>
-    public var ballots: Set<Ballot>
+    public var candidates: Array<C>
+    public var ballots: Array<Ballot>
     
     public var name: String = ""
     public var detailDescription: String = ""
@@ -34,28 +34,35 @@ public struct RankedElection<BallotID: BallotIdentifiable, CandidateID: Candidat
     public var beginDate: Date?
     public var endDate: Date?
     
+    public var isCurrentlyRunning: Bool {
+        guard let beginDate else { return false }
+        return Date() >= beginDate
+    }
+    
     /// Initalizes a `RankedElection` with the provided candidates and ballots. Generates a candidate list if none is provided.
     ///
     /// - Parameters:
     ///   - candidates: The ID for each candidate in the election. This value is generated if it is not set at initialization time.
     ///   - ballots: The ballots for the election.
-    public init(candidates: Set<CandidateID> = [], ballots: Set<Ballot>) {
+    public init(candidates: Array<C> = [], ballots: Array<Ballot>) {
         self.candidates = candidates
         self.ballots = ballots
         
         if candidates.isEmpty {
+            var candidateSet = Set<C>()
             ballots.forEach { ballot in
-                self.candidates.formUnion(ballot.rankings.map(\.candidate))
+                candidateSet.formUnion(ballot.rankings.map(\.candidate))
             }
+            self.candidates = Array(candidateSet.sorted())
         }
     }
     
-    public func irvRound(ignoring eliminated: Set<CandidateID> = []) throws -> IRVRound<BallotID, CandidateID> {
-        let candidates = candidates.subtracting(eliminated)
-        return try IRVRound(ballots: self.ballots, candidates: candidates)
+    public func irvRound<S>(ignoring eliminated: S) throws -> IRVRound<BallotID, C> where S: Sequence, S.Element == C {
+        let candidates = Set(candidates).subtracting(eliminated)
+        return try IRVRound(ballots: Set(self.ballots), candidates: candidates)
     }
     
-    public func condorcetResult() throws -> CondorcetResult<CandidateID, BallotID> {
+    public func condorcetResult() throws -> CondorcetResult<BallotID, C> {
         try CondorcetResult(ballots: Array(ballots))
     }
 
@@ -86,7 +93,7 @@ extension RankedElection: Codable {
     
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let candidates = try container.decode(Array<CandidateID>.self, forKey: .candidates).sorted()
+        let candidates = try container.decode(Array<C>.self, forKey: .candidates).sorted()
         let encodedBallots = try container.decode(EncodedBallots.self, forKey: .encodedBallots)
         
         let ballots = try encodedBallots.map { (ballotID, rankings) in
@@ -99,8 +106,8 @@ extension RankedElection: Codable {
             })
         }
         
-        self.candidates = Set(candidates)
-        self.ballots = Set(ballots)
+        self.candidates = candidates
+        self.ballots = ballots
     }
 }
 

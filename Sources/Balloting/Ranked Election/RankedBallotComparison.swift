@@ -22,7 +22,7 @@ extension RankedBallot {
             return .orderedSame
         }
         
-        var winner: CandidateID? {
+        var winner: C? {
             let result = result
             switch result {
             case .orderedSame:

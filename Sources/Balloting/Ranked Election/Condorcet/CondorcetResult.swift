@@ -7,15 +7,15 @@
 
 import Foundation
 
-public struct CondorcetResult<CandidateID: CandidateIdentifiable, BallotID: BallotIdentifiable> {
-    typealias Ballot = RankedBallot<BallotID, CandidateID>
+public struct CondorcetResult<BallotID: BallotIdentifiable, C: Candidate> {
+    typealias Ballot = RankedBallot<BallotID, C>
     
     let ballots: [Ballot]
-    let candidates: Set<CandidateID>
+    let candidates: Set<C>
     var victories: [String: ResultCouple] = [:]
     
     init(ballots: [Ballot]) throws {
-        var set = Set<CandidateID>()
+        var set = Set<C>()
         
         for ballot in ballots {
             let ids = ballot.rankings.map(\.candidate)
@@ -52,15 +52,15 @@ public struct CondorcetResult<CandidateID: CandidateIdentifiable, BallotID: Ball
         return results
     }
     
-    func ballotPreferences(for candidate1: CandidateID, against candidate2: CandidateID) throws -> [Ballot.CandidateComparison] {
+    func ballotPreferences(for candidate1: C, against candidate2: C) throws -> [Ballot.CandidateComparison] {
         return try ballots.map { try $0.comparison(between: candidate1, and: candidate2) }
     }
     
-    func preferredCandidate(for candidate1: CandidateID, against candidate2: CandidateID) throws -> [CandidateID?] {
+    func preferredCandidate(for candidate1: C, against candidate2: C) throws -> [C?] {
         try ballotPreferences(for: candidate1, against: candidate2).map(\.winner)
     }
     
-    func wins(for candidate1: CandidateID, against candidate2: CandidateID) throws -> Int {
+    func wins(for candidate1: C, against candidate2: C) throws -> Int {
         try preferredCandidate(for: candidate1, against: candidate2).count { $0 == candidate1 }
     }
 }

@@ -31,7 +31,7 @@ struct MinneapolisMayorTest {
             }
         }
         
-        election = Election(ballots: Set(ballots))
+        election = Election(ballots: Array(ballots))
     }
     
     @Test

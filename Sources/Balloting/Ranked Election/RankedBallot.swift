@@ -8,15 +8,15 @@
 import Foundation
 
 /// Represents a ranking of candidates. No error checking takes place to make sure that the ballot uses the correct number of rankings.
-public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable>: Ballot, Identifiable, Sendable {
+public struct RankedBallot<BallotID: BallotIdentifiable, C: Candidate>: Ballot, Identifiable, Sendable {
     /// Contains a ranking and a candidate ID. If a candidate is unranked, the ranking will be nil.
     public struct CandidateRanking: Codable, Sendable, Identifiable {
-        public var id: CandidateID { candidate }
+        public var id: C.ID { candidate.id }
         
-        public var candidate: CandidateID
+        public var candidate: C
         public var rank: Int?
         
-        public init(candidate: CandidateID, rank: Int? = nil) {
+        public init(candidate: C, rank: Int? = nil) {
             self.candidate = candidate
             self.rank = rank
         }
@@ -29,8 +29,8 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
     /// - Parameters:
     ///   - id: The unique identifier for the ballot
     ///   - candidates: The list of candidates
-    static func blank(id: BallotID, candidates: [CandidateID]) -> Ballot {
-        RankedBallot<BallotID, CandidateID>(id: id, rankings: candidates.map { CandidateRanking(candidate: $0) })
+    static func blank(id: BallotID, candidates: [C]) -> Ballot {
+        RankedBallot<BallotID, C>(id: id, rankings: candidates.map { CandidateRanking(candidate: $0) })
     }
     
     public init(id: BallotID, rankings: [CandidateRanking]) {
@@ -52,7 +52,7 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
     ///
     /// - Parameter candidateID: The identifier for the given candidate
     /// - Returns: A preference for the candidate identified by the candidateID
-    func preference(for candidateID: CandidateID) throws -> Int {
+    func preference(for candidateID: C) throws -> Int {
         let count = rankings.count
         guard let rank = self[candidateID] else {
             throw CandidateError.couldNotFindCandidate
@@ -63,20 +63,20 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
         return count - ranking + 1
     }
     
-    func preference(between candidate1: CandidateID, and candidate2: CandidateID) throws -> CandidateID? {
+    func preference(between candidate1: C, and candidate2: C) throws -> C? {
         let ranking = try comparison(between: candidate1, and: candidate2)
         if ranking.result == .orderedAscending { return candidate1 }
         if ranking.result == .orderedDescending { return candidate2 }
         return nil
     }
     
-    func comparison(between candidate1: CandidateID, and candidate2: CandidateID) throws -> CandidateComparison {
+    func comparison(between candidate1: C, and candidate2: C) throws -> CandidateComparison {
         let firstRanking = self[candidate1] ?? CandidateRanking(candidate: candidate1, rank: nil)
         let secondRanking = self[candidate2] ?? CandidateRanking(candidate: candidate2, rank: nil)
         return CandidateComparison(candidate1Ranking: firstRanking, candidate2Ranking: secondRanking)
     }
     
-    func orderedRankings(by candidateIDs: [CandidateID]) throws -> [CandidateRanking] {
+    func orderedRankings(by candidateIDs: [C]) throws -> [CandidateRanking] {
         try rankings.sorted { (ranking1, ranking2) -> Bool in
             guard let firstIndex = candidateIDs.firstIndex(where: { $0 == ranking1.candidate }) else {
                 throw CandidateError.couldNotFindCandidate
@@ -91,14 +91,14 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
     /// The candidate with the highest ranking on this ballot
     /// - Parameter candidates: An array of candidates to use in the ranking (all others will be ignored)
     /// - Returns: The `CandidateID` for the candidate who is ranked highest, or nil if no such candidate exists
-    func highestRankedCandidate(using candidates: [CandidateID]) throws -> CandidateID? {
+    func highestRankedCandidate(using candidates: [C]) throws -> C? {
         try candidatesOrderedByRank(using: candidates).first?.candidate
     }
     
     /// Orders the candidates by rank, ignoring unranked candidates on the ballot and removing candidates who belong to the eliminated array
     /// - Parameter candidates: An array of candidates to use in the ranking (all others will be ignored)
     /// - Returns: A list of candidate rankings, ordered by preference and ignoring candidates that are not in the candidates array
-    func candidatesOrderedByRank(using candidates: [CandidateID]) throws -> [CandidateRanking] {
+    func candidatesOrderedByRank(using candidates: [C]) throws -> [CandidateRanking] {
         if candidates.isEmpty { throw CandidateError.noCandidatesProvided }
         //return rankings.filter { $0.rank != nil }.filter { candidates.contains($0.candidate) }.sorted { $0.rank! < $1.rank! }
         return rankings.filter { candidates.contains($0.candidate) }
@@ -111,7 +111,7 @@ public struct RankedBallot<BallotID: BallotIdentifiable, CandidateID: CandidateI
     /// Counts the number of vote rankings that are ignored
     /// - Parameter candidates: The candidates to use for counting
     /// - Returns: The number of candidates that were not selected in the ranking process
-    public func undervoteCount(using candidates: [CandidateID]) -> Int {
+    public func undervoteCount(using candidates: [C]) -> Int {
         self.rankings.count(where: { $0.rank == nil && candidates.contains($0.candidate) })
     }
     
@@ -159,7 +159,7 @@ extension RankedBallot: Collection {
         rankings[index]
     }
     
-    public subscript(_ candidate: CandidateID) -> CandidateRanking? {
+    public subscript(_ candidate: C) -> CandidateRanking? {
         rankings.first { $0.candidate == candidate }
     }
 }

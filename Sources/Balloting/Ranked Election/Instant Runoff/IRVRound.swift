@@ -20,8 +20,8 @@ fileprivate extension String {
 /// Describes the counting of a round of Instant Runoff Voting
 ///
 ///
-public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdentifiable> {
-    typealias Ballot = RankedBallot<BallotID, CandidateID>
+public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
+    typealias Ballot = RankedBallot<BallotID, C>
     
     /// The ballots used to count the round
     let ballots: Set<Ballot>
@@ -29,15 +29,15 @@ public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdent
     /// The candidates used in the counting of this round
     ///
     /// - note: Only candidates in this set will be counted in the round
-    let candidates: Set<CandidateID>
+    let candidates: Set<C>
     
     /// The number of votes counted for each candidate
     ///
     /// Candidates will only receive votes if they are included in the set of candidates. This is useful for when a candidate has been eliminated as part of a previous round of voting. Thus, there may be instances where a candidate appears in the set of ballots but does not appear in the set of candiates. In this case, the candidate will not appear in the voteCount and will return nil.
-    var voteCount: [CandidateID: Int] = [:]
+    var voteCount: [C: Int] = [:]
     
     struct Tally {
-        var candidate: CandidateID
+        var candidate: C
         var votes: Int
     }
     
@@ -47,7 +47,7 @@ public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdent
     /// - Parameters:
     ///   - ballots: The ballots to be counted
     ///   - candidates: The candidates that should be used for counting. Any candidates that exist in the ballot, but not in the candidate set will not be counted.
-    init(ballots: Set<Ballot>, candidates: Set<CandidateID>) throws {
+    init(ballots: Set<Ballot>, candidates: Set<C>) throws {
         self.ballots = ballots
         self.candidates = candidates
         
@@ -73,7 +73,7 @@ public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdent
     
     /// A function to increment the vote for a given candidate by one.
     /// - Parameter candidate: The candidate whose vote should be incremented.
-    private mutating func incrementVote(for candidate: CandidateID) {
+    private mutating func incrementVote(for candidate: C) {
         if let count = voteCount[candidate] {
             voteCount[candidate] = count + 1
         } else {
@@ -82,12 +82,12 @@ public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdent
     }
     
     /// A helper to return the vote count for a given candidate
-    subscript(_ candidate: CandidateID) -> Int? {
+    subscript(_ candidate: C) -> Int? {
         return voteCount[candidate]
     }
     
     /// The candidate who has received a majority. Returns nil if no candidate has received a majority
-    var majorityCandidate: CandidateID? {
+    var majorityCandidate: C? {
         let totalBallots = self.ballots.count
         let candidates = voteCount.filter { $0.value > totalBallots / 2 }.map(\.key)
         return candidates.first
@@ -97,7 +97,7 @@ public struct IRVRound<BallotID: BallotIdentifiable, CandidateID: CandidateIdent
         case random
     }
     
-    func eliminationCandidate(using tiebreakerScheme: Tiebreaker) -> CandidateID? {
+    func eliminationCandidate(using tiebreakerScheme: Tiebreaker) -> C? {
         switch tiebreakerScheme {
         case .random:
             guard let lowestMark = finalTally.last?.votes else { return nil }

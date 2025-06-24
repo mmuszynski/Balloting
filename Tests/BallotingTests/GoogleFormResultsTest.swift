@@ -62,7 +62,7 @@ func loadDessertElection() throws -> RankedElection<Date, String> {
         return RankedBallot(id: date, rankings: choices)
     }
     
-    return RankedElection(candidates: Set(candidates), ballots: Set(ballots))
+    return RankedElection(candidates: candidates, ballots: ballots)
 }
 
 struct GoogleFormResultsTest {
