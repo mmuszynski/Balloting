@@ -8,9 +8,13 @@
 import Foundation
 
 public protocol Election: Sendable, Codable {
-    var beginDate: Date? { get }
-    var endDate: Date? { get }
+    var beginDate: Date { get }
+    var endDate: Date { get }
     
     var name: String { get }
     var detailDescription: String { get }
+}
+
+public protocol ElectionResult: Sendable, Codable {
+    
 }

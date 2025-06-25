@@ -40,7 +40,7 @@ struct MinneapolisMayorTest {
         
         var winner: String? = nil
         let eliminated: Set<String> = []
-        let round = try election.irvRound(ignoring: eliminated)
+        let round = try IRVRound(election: election, ignoring: eliminated)
         winner = round.majorityCandidate
         #expect(winner == "RYB")
     }

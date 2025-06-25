@@ -31,11 +31,10 @@ public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Electi
     public var name: String = ""
     public var detailDescription: String = ""
     
-    public var beginDate: Date?
-    public var endDate: Date?
+    public var beginDate: Date = .distantFuture
+    public var endDate: Date = .distantFuture
     
     public var isCurrentlyRunning: Bool {
-        guard let beginDate else { return false }
         return Date() >= beginDate
     }
     
@@ -58,12 +57,16 @@ public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Electi
     }
     
     public func irvRound<S>(ignoring eliminated: S) throws -> IRVRound<BallotID, C> where S: Sequence, S.Element == C {
-        let candidates = Set(candidates).subtracting(eliminated)
-        return try IRVRound(ballots: Set(self.ballots), candidates: candidates)
+        return try IRVRound(election: self, ignoring: Set(eliminated))
     }
     
     public func condorcetResult() throws -> CondorcetResult<BallotID, C> {
         try CondorcetResult(ballots: Array(ballots))
+    }
+    
+    mutating public func addEmptyBallot(id: BallotID, with candidates: [C]) {
+        let ballot = Ballot(id: id, rankings: candidates.map { Ballot.CandidateRanking(candidate: $0, rank: nil) })
+        self.ballots.append(ballot)
     }
 
 }
