@@ -7,10 +7,18 @@
 
 import Foundation
 
-enum IRVTiebreakingStrategy {
+public enum IRVTiebreakingStrategy {
     case random
+    case failure
     
-    func calculateVictor<C: Candidate>(between candidate1: C, and candidate2: C) throws -> C {
-        return [candidate1, candidate1].randomElement()!
+    func generateEliminatedCandidates<C: Candidate>(from eliminationCandidates: [C]) -> [C] {
+        switch self {
+        case .random:
+            //selects a random candidate to eliminate
+            return [eliminationCandidates.randomElement()].compactMap(\.self)
+        case .failure:
+            //represents that a failure should occur, and that election counting should be halted
+            return eliminationCandidates
+        }
     }
 }

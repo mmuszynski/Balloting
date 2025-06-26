@@ -123,14 +123,18 @@ struct GoogleFormResultsTest {
     func autoIRV() async throws {
         var winner: String? = nil
         var eliminated: Set<String> = []
+        
+        let tiebreakerStrategy = [IRVTiebreakingStrategy.failure]
+        
         while winner == nil {
-            let round = try election.irvRound(ignoring: eliminated)
+            let round = try election.irvRound(ignoring: eliminated, breakingTiesWith: tiebreakerStrategy)
             winner = round.majorityCandidate
             
-            if let eliminationCandidate = round.eliminationCandidate(using: .random) {
+            if let eliminationCandidate = round.eliminatedCandidate {
                 eliminated.insert(eliminationCandidate)
             } else {
                 print("Could not get lowest candidate")
+                break
             }
         }
         #expect(winner == "Carrot Cake")

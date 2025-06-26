@@ -18,8 +18,6 @@ fileprivate extension String {
 }
 
 /// Describes the counting of a round of Instant Runoff Voting
-///
-///
 public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
     typealias Ballot = RankedBallot<BallotID, C>
     
@@ -30,16 +28,65 @@ public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
         var votes: Int
     }
     
-    var finalTally: [Tally] = []
+    let finalTally: [Tally]
     
-    init(election: RankedElection<BallotID, C>, ignoring eliminatedCandidates: Set<C>) throws {
-        try self.init(ballots:  Set(election.ballots), candidates: Set(election.candidates), ignoring: eliminatedCandidates)
+    typealias TiebreakResult = (IRVTiebreakingStrategy, [C])
+    let tiebreakingHistory: [TiebreakResult]
+    let majorityCandidate: C?
+    var eliminatedCandidate: C? {
+        if tiebreakingHistory.isEmpty { return finalTally.last?.candidate }
+        return tiebreakingHistory.last?.1.first
+    }
+        
+    init(election: RankedElection<BallotID, C>,
+         ignoring eliminatedCandidates: Set<C>,
+         breakingTiesWith tiebreakProcedure: [IRVTiebreakingStrategy] = [.failure]) throws
+    {
+        try self.init(ballots:  Set(election.ballots),
+                      candidates: Set(election.candidates),
+                      ignoring: eliminatedCandidates,
+                      breakingTiesWith: tiebreakProcedure)
     }
     
-    init(ballots: Set<RankedBallot<BallotID, C>>, candidates: Set<C>, ignoring eliminatedCandidates: Set<C>) throws {
+    init(ballots: Set<RankedBallot<BallotID, C>>,
+         candidates: Set<C>,
+         ignoring eliminatedCandidates: Set<C>,
+         breakingTiesWith tiebreakProcedure: [IRVTiebreakingStrategy] = [.failure]) throws
+    {
         self.ballotCount = ballots.count
         let tally = try IRVRound.tally(ballots: ballots, using: candidates, ignoring: eliminatedCandidates)
         self.finalTally = tally
+                
+        let majorityCandidates = finalTally.filter { $0.votes > ballots.count / 2 }.sorted(by: { $0.votes > $1.votes }).map(\.candidate)
+        self.majorityCandidate = majorityCandidates.first
+        
+        
+        /// Candidates who receive the fewest number of votes are candidates for elimination from the remaining rounds of the election. Assumes that the final tally is ordered by vote count.
+        func breakTies(using tiebreakingProcedure: [IRVTiebreakingStrategy]) -> [TiebreakResult] {
+            var tiebreakHistory: [TiebreakResult] = []
+
+            //Get the lowest vote count
+            guard let lowestVoteCount = tally.last?.votes else { return [] }
+            
+            //Select for the candidates that have that lowest vote count
+            var potentialCanidatesForElimination = tally.filter { $0.votes == lowestVoteCount }.map { $0.candidate }
+            
+            //Using each of the strategies in the tiebreaking procedure
+            //1. run their algorithm to select potential candidates for elimination
+            //2. see if there is only one candidate, and return if so
+            //3. run the next strategy with the same potential candidates
+            for strategy in tiebreakingProcedure {
+                if candidates.count == 1 { break }
+                let candidates = strategy.generateEliminatedCandidates(from: potentialCanidatesForElimination)
+                tiebreakHistory.append((strategy, candidates))
+                potentialCanidatesForElimination = candidates
+            }
+            
+            return tiebreakHistory
+        }
+        
+        //break any ties
+        tiebreakingHistory = breakTies(using: tiebreakProcedure)
     }
     
     /// The function that does the actual counting. Will initally sort the ballot by rank.
@@ -69,23 +116,9 @@ public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
         return voteCount.map { Tally(candidate: $0.key, votes: $0.value) }.sorted(by: { $0.votes > $1.votes })
     }
     
-    /// A helper to return the vote count for a given candidate
+    /// Returns the vote count for a given candidate
     subscript(_ candidate: C) -> Int? {
         return finalTally.first(where: { $0.candidate.id == candidate.id })?.votes
-    }
-    
-    /// The candidate who has received a majority. Returns nil if no candidate has received a majority
-    var majorityCandidate: C? {
-        let candidates = finalTally.filter { $0.votes > ballotCount / 2 }.map(\.candidate)
-        return candidates.first
-    }
-    
-    func eliminationCandidate(using tiebreakerScheme: IRVTiebreakingStrategy) -> C? {
-        switch tiebreakerScheme {
-        case .random:
-            guard let lowestMark = finalTally.last?.votes else { return nil }
-            return self.finalTally.filter { $0.votes == lowestMark }.randomElement()?.candidate
-        }
     }
 }
 

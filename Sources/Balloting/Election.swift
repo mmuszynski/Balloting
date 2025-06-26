@@ -12,7 +12,7 @@ public protocol Election: Sendable, Codable {
     var endDate: Date { get }
     
     var name: String { get }
-    var detailDescription: String { get }
+    var detailDescription: String { get }    
 }
 
 public protocol ElectionResult: Sendable, Codable {

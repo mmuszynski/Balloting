@@ -56,8 +56,8 @@ public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Electi
         }
     }
     
-    public func irvRound<S>(ignoring eliminated: S) throws -> IRVRound<BallotID, C> where S: Sequence, S.Element == C {
-        return try IRVRound(election: self, ignoring: Set(eliminated))
+    public func irvRound<S>(ignoring eliminated: S, breakingTiesWith tiebreakProcedure: [IRVTiebreakingStrategy] = [.failure]) throws -> IRVRound<BallotID, C> where S: Sequence, S.Element == C {
+        return try IRVRound(election: self, ignoring: Set(eliminated), breakingTiesWith: tiebreakProcedure)
     }
     
     public func condorcetResult() throws -> CondorcetResult<BallotID, C> {
