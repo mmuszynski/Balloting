@@ -76,7 +76,7 @@ public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
             //2. see if there is only one candidate, and return if so
             //3. run the next strategy with the same potential candidates
             for strategy in tiebreakingProcedure {
-                if candidates.count == 1 { break }
+                if potentialCanidatesForElimination.count == 1 { break }
                 let candidates = strategy.generateEliminatedCandidates(from: potentialCanidatesForElimination)
                 tiebreakHistory.append((strategy, candidates))
                 potentialCanidatesForElimination = candidates

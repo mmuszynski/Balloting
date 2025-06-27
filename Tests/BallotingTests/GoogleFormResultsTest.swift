@@ -86,6 +86,13 @@ struct GoogleFormResultsTest {
         #expect(roundOne["Angelfood Cake"] == 0)
         #expect(roundOne.description == "Chocolate Cake: 10, Carrot Cake: 7, Cheesecake: 4, Pumpkin Pie: 4, Apple Pie: 3, Angelfood Cake: 0")
         
+        //This round should produce no winner
+        //It should also produce one eliminated candidate, Angelfood Cake
+        //No tiebreakers are used, so the tiebreaking history should be empty
+        #expect(roundOne.majorityCandidate == nil)
+        #expect(roundOne.tiebreakingHistory.isEmpty)
+        #expect(roundOne.eliminatedCandidate == "Angelfood Cake")
+        
         let roundTwo = try election.irvRound(ignoring: ["Angelfood Cake"])
         #expect(roundTwo["Chocolate Cake"] == 10)
         #expect(roundTwo["Carrot Cake"] == 7)

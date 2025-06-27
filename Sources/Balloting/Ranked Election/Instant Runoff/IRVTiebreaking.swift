@@ -8,6 +8,9 @@
 import Foundation
 
 public enum IRVTiebreakingStrategy {
+    case borda
+    case initialHighestOrderPreference
+    case currentNextHighestOrderPreference
     case random
     case failure
     
@@ -19,6 +22,8 @@ public enum IRVTiebreakingStrategy {
         case .failure:
             //represents that a failure should occur, and that election counting should be halted
             return eliminationCandidates
+        default:
+            fatalError("Unimplemented")
         }
     }
 }
