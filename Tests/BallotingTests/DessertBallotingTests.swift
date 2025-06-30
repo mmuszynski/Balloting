@@ -53,7 +53,7 @@ let rawRankings = [
     }
 }
 
-@Test func drawBallot() async throws {
+@Test func ballotWithDraw() async throws {
     let first = RankedBallot<Int, String>.CandidateRanking(candidate: "Chocolate Cake", rank: nil)
     let second = RankedBallot<Int, String>.CandidateRanking(candidate: "Cheesecake", rank: nil)
     #expect(RankedBallot.CandidateComparison(candidate1Ranking: first, candidate2Ranking: second).winner == nil)

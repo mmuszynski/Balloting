@@ -11,7 +11,6 @@ import Foundation
 
 //The results of these elections comes from the google form with results at  https://docs.google.com/spreadsheets/d/1PB8zEAj1a-JXScfxqcZd-tM29HOzKN1lE4oOmerUZlw/edit?gid=1301572243#gid=1301572243
 
-
 func loadDessertElection() throws -> RankedElection<Date, String> {
     typealias Ballot = RankedBallot<Date, String>
 
