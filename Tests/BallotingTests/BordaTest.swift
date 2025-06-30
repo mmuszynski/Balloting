@@ -19,7 +19,7 @@ struct BordaTest {
     
     @Test
     func bordaCount() throws {
-        let count = election.bordaCount(ignoring: [])
+        let count = RankedElection.bordaCount(using: election.ballots, ignoring: [])
         #expect(count["Chocolate Cake"] == 99)
         #expect(count["Cheesecake"] == 109)
         #expect(count["Apple Pie"] == 100)

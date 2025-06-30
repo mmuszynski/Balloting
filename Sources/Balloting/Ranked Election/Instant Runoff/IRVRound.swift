@@ -77,7 +77,7 @@ public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
             //3. run the next strategy with the same potential candidates
             for strategy in tiebreakingProcedure {
                 if potentialCanidatesForElimination.count == 1 { break }
-                let candidates = strategy.generateEliminatedCandidates(from: potentialCanidatesForElimination)
+                let candidates = strategy.generateEliminatedCandidates(using: ballots, from: potentialCanidatesForElimination)
                 tiebreakHistory.append((strategy, candidates))
                 potentialCanidatesForElimination = candidates
             }

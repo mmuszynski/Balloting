@@ -7,6 +7,20 @@
 
 import Foundation
 
+extension Dictionary where Value == Int {
+    func lowestRankingCandidates<C>(among eliminationCandidates: [C]) -> [Key] {
+        let sorted = self.filter { element in
+            eliminationCandidates.contains(element.key)
+        }
+        .sorted { first, second in
+            first.value > second.value
+        }
+        
+        guard let lowest = sorted.last?.value else { return [] }
+        return sorted.filter({ $0.value == lowest }).map(\.key)
+    }
+}
+
 public enum IRVTiebreakingStrategy {
     case borda
     case initialHighestOrderPreference
@@ -14,8 +28,10 @@ public enum IRVTiebreakingStrategy {
     case random
     case failure
     
-    func generateEliminatedCandidates<C: Candidate>(from eliminationCandidates: [C]) -> [C] {
+    func generateEliminatedCandidates<BallotID: BallotIdentifiable, C: Candidate>(using ballots: Set<RankedElection<BallotID, C>.Ballot>, from eliminationCandidates: [C]) -> [C] {
         switch self {
+        case .borda:
+            return RankedElection.bordaCount(using: ballots, ignoring: []).lowestRankingCandidates(among: eliminationCandidates)
         case .random:
             //selects a random candidate to eliminate
             return [eliminationCandidates.randomElement()].compactMap(\.self)
