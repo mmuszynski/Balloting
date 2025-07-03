@@ -19,12 +19,20 @@ struct BordaTest {
     
     @Test
     func bordaCount() throws {
-        let count = RankedElection.bordaCount(using: election.ballots, ignoring: [])
+        let count = BordaCount(using: Set(election.ballots), ignoring: [])
         #expect(count["Chocolate Cake"] == 99)
         #expect(count["Cheesecake"] == 109)
         #expect(count["Apple Pie"] == 100)
         #expect(count["Carrot Cake"] == 109)
         #expect(count["Pumpkin Pie"] == 73)
         #expect(count["Angelfood Cake"] == 49)
+        
+        #expect(count.last == (key: "Angelfood Cake", value: 73))
+    }
+    
+    @Test
+    func lowestCanddiates() throws {
+        let results = ["Bob" : 5, "John" : 10, "Steve" : 5, "Harry" : 12]
+        #expect(Set(results.lowestRankingCandidates(among: results.map(\.key)).map(\.0)) == Set(["Bob", "Steve"]))
     }
 }
