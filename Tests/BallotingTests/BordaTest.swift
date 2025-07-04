@@ -27,7 +27,8 @@ struct BordaTest {
         #expect(count["Pumpkin Pie"] == 73)
         #expect(count["Angelfood Cake"] == 49)
         
-        #expect(count.last == (key: "Angelfood Cake", value: 73))
+        #expect(count.last?.candidate == "Angelfood Cake")
+        #expect(count.last?.value == 49)
     }
     
     @Test

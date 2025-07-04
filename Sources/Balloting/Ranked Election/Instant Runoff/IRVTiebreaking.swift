@@ -14,15 +14,24 @@ extension Dictionary where Key: Candidate, Value == Int {
             first.value > second.value
         }
         
-        guard let lowest = sorted.last?.value else { return [] }
-        return sorted.filter({ $0.value == lowest }).map { ($0.key, $0.value) }
+        return sorted.map { ($0.key, $0.value) }
     }
     
     func lowestRankingCandidates(among eliminationCandidates: [Key]) -> [(Key, Value)] {
         self.sortedByValue()
+            .reversed()
             .filter { element in
                 let key = element.0
                 return eliminationCandidates.contains(key)
+            }
+            .reduce(into: [(Key,Value)]()) { partialResult, next in
+                if partialResult.isEmpty {
+                    partialResult.append(next)
+                } else {
+                    if next.1 == partialResult[0].1 {
+                        partialResult.append(next)
+                    }
+                }
             }
     }
 }

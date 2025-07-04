@@ -8,7 +8,7 @@
 import Foundation
 
 public struct BordaCount<C: Candidate> {
-    public typealias Element = (key: C, value: Int)
+    public typealias Element = (candidate: C, value: Int)
     private let store: [Element]
     
     init(using ballots: Set<RankedBallot<some BallotIdentifiable, C>>, ignoring eliminatedCandidates: Set<C>, maxRank: Int? = nil) {
@@ -45,7 +45,7 @@ public struct BordaCount<C: Candidate> {
     }
     
     public subscript(_ candidate: C) -> Int? {
-        store.first { $0.key == candidate }?.value
+        store.first { $0.candidate == candidate }?.value
     }
 }
 
@@ -65,6 +65,10 @@ extension BordaCount: Collection {
     
     public func index(after i: Array<Element>.Index) -> Array<Element>.Index {
         store.index(after: i)
+    }
+    
+    public var last: Element? {
+        store.last
     }
 }
 
