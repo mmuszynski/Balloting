@@ -28,14 +28,10 @@ public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Electi
     public var candidates: Array<C>
     public var ballots: Array<Ballot>
     
-    public var name: String = ""
-    public var detailDescription: String = ""
-    
-    public var beginDate: Date = .distantFuture
-    public var endDate: Date = .distantFuture
+    public var configuration: ElectionConfiguration = .init()
     
     public var isCurrentlyRunning: Bool {
-        return Date() >= beginDate
+        return Date() >= configuration.beginDate
     }
     
     /// Initalizes a `RankedElection` with the provided candidates and ballots. Generates a candidate list if none is provided.

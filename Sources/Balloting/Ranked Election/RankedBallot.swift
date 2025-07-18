@@ -169,3 +169,78 @@ extension RankedBallot: Comparable {
         lhs.id < rhs.id
     }
 }
+
+/*
+ ==================================================================================================
+ MARK: CSV Import/Export
+ ==================================================================================================
+ */
+
+extension RankedBallot {
+    
+    func csvLineRepresentation(withCandidateOrder candidateOrder: [C] = []) -> String {
+        let candidateOrder = candidateOrder.isEmpty ? self.rankings.map(\.candidate).sorted() : candidateOrder
+        let idString = String(describing: self.id)
+        
+        let rankings = candidateOrder
+            .map { self[$0]?.rank ?? 0 }
+            .map(String.init)
+        
+        return ([idString] + rankings).joined(separator: ",")
+    }
+    
+    public init(csvRepresentation: String, with candidateOrder: [C]) {
+        
+        //Separate components by commas
+        var components = csvRepresentation.components(separatedBy: ",")
+        
+        //Use the first of these as the id string
+        let idString = components.removeFirst()
+        
+        //Translate that ID string to the actual ID type
+        let id = BallotID(csvString: idString)
+        
+        let rankings = components.enumerated().map { offset, rank in
+            guard let rank = Int(rank) else { fatalError() }
+            return CandidateRanking(candidate: candidateOrder[offset], rank: rank == 0 ? nil : rank)
+        }
+        
+        self.id = id
+        self.rankings = rankings
+    }
+    
+}
+
+extension RankedElection {
+    
+    public func csvRepresentation(withCandidateOrder order: [C] = []) -> String {
+        let order = order.isEmpty ? self.candidates : order
+        
+        var header = order.map(\.id).map(String.init(describing:))
+        header.insert("Ballot ID", at: 0)
+        let csvData = self.ballots.map { $0.csvLineRepresentation(withCandidateOrder: order) }
+        
+        return ([header.joined(separator: ",")] + csvData).joined(separator: "\n")
+    }
+    
+    mutating func loadBallots(from csvString: String, with candidates: [C]) throws {
+        var lines = csvString.components(separatedBy: .newlines)
+        
+        let headers = lines.remove(at: 0).components(separatedBy: ",").dropFirst().map { C.ID(csvString: $0) }
+        
+        let candidateLookup = candidates.reduce(into: Dictionary<C.ID, C>()) { result, next in
+            result[next.id] = next
+        }
+        
+        let candidates = headers.compactMap { candidateLookup[$0] }
+        
+        self.ballots = lines.map { RankedBallot<BallotID, C>(csvRepresentation: $0, with: candidates) }
+    }
+    
+    public init(csvRepresentation: String) throws {
+        var election = Self.init(ballots: [])
+        try election.loadBallots(from: csvRepresentation, with: [])
+        self = election
+    }
+    
+}

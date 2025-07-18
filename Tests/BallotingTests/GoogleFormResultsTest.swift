@@ -145,4 +145,10 @@ struct GoogleFormResultsTest {
         }
         #expect(winner == "Carrot Cake")
     }
+    
+    @Test
+    func csvOutput() async throws {
+        let csvString = election.csvRepresentation()
+        print(csvString)
+    }
 }
