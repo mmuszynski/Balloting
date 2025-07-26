@@ -237,9 +237,9 @@ extension RankedElection {
         self.ballots = lines.map { RankedBallot<BallotID, C>(csvRepresentation: $0, with: candidates) }
     }
     
-    public init(csvRepresentation: String) throws {
+    public init(csvRepresentation: String, with candidates: [C] = []) throws {
         var election = Self.init(ballots: [])
-        try election.loadBallots(from: csvRepresentation, with: [])
+        try election.loadBallots(from: csvRepresentation, with: candidates)
         self = election
     }
     
