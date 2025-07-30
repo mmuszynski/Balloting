@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol Election: Sendable, Codable {
-    var configuration: ElectionConfiguration { get }
+    var configuration: ElectionConfiguration { get set }
 }
 
 public protocol ElectionResult: Sendable, Codable {
@@ -21,3 +21,5 @@ public struct ElectionConfiguration: Sendable, Codable {
     public var beginDate: Date = .distantFuture
     public var endDate: Date = .distantFuture
 }
+
+

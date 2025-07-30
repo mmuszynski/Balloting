@@ -27,7 +27,7 @@ extension String: Candidate {}
 extension Int: Candidate {}
 
 public protocol CandidateIdentifiable: Equatable & Hashable & Comparable & Codable & Sendable {
-    init(csvString: String)
+    init?(csvString: String)
 }
 
 extension String: CandidateIdentifiable {}

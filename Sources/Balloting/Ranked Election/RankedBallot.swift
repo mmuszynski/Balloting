@@ -7,33 +7,45 @@
 
 import Foundation
 
-/// Represents a ranking of candidates. No error checking takes place to make sure that the ballot uses the correct number of rankings.
-public struct RankedBallot<BallotID: BallotIdentifiable, C: Candidate>: Ballot, Identifiable, Sendable {
-    /// Contains a ranking and a candidate ID. If a candidate is unranked, the ranking will be nil.
-    public struct CandidateRanking: Codable, Sendable, Identifiable {
-        public var id: C.ID { candidate.id }
-        
-        public var candidate: C
-        public var rank: Int?
-        
-        public init(candidate: C, rank: Int? = nil) {
-            self.candidate = candidate
-            self.rank = rank
-        }
+public protocol RankedBallotProtocol: Ballot, Identifiable, Sendable where ID: BallotIdentifiable {
+    associatedtype C: Candidate
+    associatedtype Ranking
+    
+    var id: ID { get }
+    var textualDescription: String { get }
+    var rankings: [CandidateRanking<C>] { get set }
+}
+
+/// Contains a ranking and a candidate ID. If a candidate is unranked, the ranking will be nil.
+public struct CandidateRanking<C: Candidate>: Codable, Sendable, Identifiable {
+    public var id: C.ID { candidate.id }
+    
+    public var candidate: C
+    public var rank: Int?
+    
+    public init(candidate: C, rank: Int? = nil) {
+        self.candidate = candidate
+        self.rank = rank
     }
+}
+
+/// Represents a ranking of candidates. No error checking takes place to make sure that the ballot uses the correct number of rankings.
+public struct RankedBallot<BallotID: BallotIdentifiable, C: Candidate>: RankedBallotProtocol, Identifiable, Sendable {
+    
+    public typealias Ranking = CandidateRanking<C>
     
     public let id: BallotID
-    public var rankings: [CandidateRanking]
+    public var rankings: [Ranking]
     
     /// Initializes a ballot with a given set of candidates and their rankings all set to nil.
     /// - Parameters:
     ///   - id: The unique identifier for the ballot
     ///   - candidates: The list of candidates
     static func blank(id: BallotID, candidates: [C]) -> Ballot {
-        RankedBallot<BallotID, C>(id: id, rankings: candidates.map { CandidateRanking(candidate: $0) })
+        RankedBallot<BallotID, C>(id: id, rankings: candidates.map { Ranking(candidate: $0) })
     }
     
-    public init(id: BallotID, rankings: [CandidateRanking]) {
+    public init(id: BallotID, rankings: [Ranking]) {
         self.id = id
         self.rankings = rankings
     }
@@ -71,12 +83,12 @@ public struct RankedBallot<BallotID: BallotIdentifiable, C: Candidate>: Ballot, 
     }
     
     func comparison(between candidate1: C, and candidate2: C) throws -> CandidateComparison {
-        let firstRanking = self[candidate1] ?? CandidateRanking(candidate: candidate1, rank: nil)
-        let secondRanking = self[candidate2] ?? CandidateRanking(candidate: candidate2, rank: nil)
+        let firstRanking = self[candidate1] ?? Ranking(candidate: candidate1, rank: nil)
+        let secondRanking = self[candidate2] ?? Ranking(candidate: candidate2, rank: nil)
         return CandidateComparison(candidate1Ranking: firstRanking, candidate2Ranking: secondRanking)
     }
     
-    func orderedRankings(by candidateIDs: [C]) throws -> [CandidateRanking] {
+    func orderedRankings(by candidateIDs: [C]) throws -> [Ranking] {
         try rankings.sorted { (ranking1, ranking2) -> Bool in
             guard let firstIndex = candidateIDs.firstIndex(where: { $0 == ranking1.candidate }) else {
                 throw CandidateError.couldNotFindCandidate
@@ -98,13 +110,13 @@ public struct RankedBallot<BallotID: BallotIdentifiable, C: Candidate>: Ballot, 
     /// Orders the candidates by rank, ignoring unranked candidates on the ballot and removing candidates who belong to the eliminated array
     /// - Parameter candidates: An array of candidates to use in the ranking (all others will be ignored)
     /// - Returns: A list of candidate rankings, ordered by preference and ignoring candidates that are not in the candidates array
-    func candidatesOrderedByRank(using candidates: [C]) throws -> [CandidateRanking] {
+    func candidatesOrderedByRank(using candidates: [C]) throws -> [Ranking] {
         if candidates.isEmpty { throw CandidateError.noCandidatesProvided }
         //return rankings.filter { $0.rank != nil }.filter { candidates.contains($0.candidate) }.sorted { $0.rank! < $1.rank! }
         return rankings.filter { candidates.contains($0.candidate) }
     }
     
-    public func sortedByRank() -> [CandidateRanking] {
+    public func sortedByRank() -> [Ranking] {
         self.rankings.sorted(by: { $0.rank ?? Int.max < $1.rank ?? Int.max })
     }
     
@@ -141,7 +153,7 @@ extension RankedBallot: Equatable {
 }
 
 extension RankedBallot: Collection {
-    public typealias Index = Array<CandidateRanking>.Index
+    public typealias Index = Array<Ranking>.Index
     
     public func index(after i: Index) -> Index {
         rankings.index(after: i)
@@ -155,11 +167,11 @@ extension RankedBallot: Collection {
         rankings.endIndex
     }
     
-    public subscript(index: Index) -> CandidateRanking {
+    public subscript(index: Index) -> Ranking {
         rankings[index]
     }
     
-    public subscript(_ candidate: C) -> CandidateRanking? {
+    public subscript(_ candidate: C) -> Ranking? {
         rankings.first { $0.candidate == candidate }
     }
 }
@@ -176,6 +188,10 @@ extension RankedBallot: Comparable {
  ==================================================================================================
  */
 
+enum BallotError: Error {
+    case CouldNotParseID(_ idString: String)
+}
+
 extension RankedBallot {
     
     func csvLineRepresentation(withCandidateOrder candidateOrder: [C] = []) -> String {
@@ -189,7 +205,7 @@ extension RankedBallot {
         return ([idString] + rankings).joined(separator: ",")
     }
     
-    public init(csvRepresentation: String, with candidateOrder: [C]) {
+    public init(csvRepresentation: String, with candidateOrder: [C]) throws {
         
         //Separate components by commas
         var components = csvRepresentation.components(separatedBy: ",")
@@ -198,7 +214,9 @@ extension RankedBallot {
         let idString = components.removeFirst()
         
         //Translate that ID string to the actual ID type
-        let id = BallotID(csvString: idString)
+        guard let id = BallotID(csvString: idString) else {
+            throw BallotError.CouldNotParseID(idString)
+        }
         
         let rankings = components.enumerated().map { offset, rank in
             guard let rank = Int(rank) else { fatalError() }
@@ -226,7 +244,7 @@ extension RankedElection {
     mutating func loadBallots(from csvString: String, with candidates: [C]) throws {
         var lines = csvString.components(separatedBy: .newlines)
         
-        let headers = lines.remove(at: 0).components(separatedBy: ",").dropFirst().map { C.ID(csvString: $0) }
+        let headers = lines.remove(at: 0).components(separatedBy: ",").dropFirst().compactMap { C.ID(csvString: $0) }
         
         let candidateLookup = candidates.reduce(into: Dictionary<C.ID, C>()) { result, next in
             result[next.id] = next
@@ -234,7 +252,7 @@ extension RankedElection {
         
         let candidates = headers.compactMap { candidateLookup[$0] }
         
-        self.ballots = lines.map { RankedBallot<BallotID, C>(csvRepresentation: $0, with: candidates) }
+        self.ballots = try lines.map { try RankedBallot<BallotID, C>(csvRepresentation: $0, with: candidates) }
     }
     
     public init(csvRepresentation: String, with candidates: [C] = []) throws {

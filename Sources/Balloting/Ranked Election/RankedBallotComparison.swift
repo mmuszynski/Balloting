@@ -9,8 +9,8 @@ import Foundation
 
 extension RankedBallot {
     struct CandidateComparison: CustomStringConvertible {
-        var candidate1Ranking: CandidateRanking
-        var candidate2Ranking: CandidateRanking
+        var candidate1Ranking: Ranking
+        var candidate2Ranking: Ranking
         
         var result: ComparisonResult {
             let candidate1Ranking = candidate1Ranking.rank ?? .max

@@ -17,12 +17,22 @@ fileprivate extension String {
     }
 }
 
+public protocol RankedElectionProtocol: Election, Codable {
+    associatedtype Ballot: RankedBallotProtocol
+    associatedtype Candidate
+    
+    var ballots: [Ballot] { get set }
+    var isRunning: Bool { get }
+    var candidates: [Candidate] { get set }
+    mutating func addEmptyBallot(id: Ballot.ID, with candidates: [Candidate])
+}
+
 /// Describes an election using a ranked ballot
 ///
 /// This struct describes the parts of an election that uses a ranked, unweighted balloting system. In this type of election, a slate of candidates is given a ranking from most preferred to least preferred on a given number of ballots. This struct is generic across a number of dimensions, including the way candidates are identified (see `CandidateIdentifiable`) and the way ballots are identified (see `BallotIdentifiable`). This should allow ballots and candidates to conform to the Identifiable protocol required of most SwiftUI views.
 ///
 /// Further, `RankedElection` conforms to the `Codable` protocol, allowing it to be serialized and unserialized. There is a custom application of `Decodable` and `Encodable` in order to pack the information tighter than the standard syntesized conformance.
-public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Election, Sendable {
+public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: RankedElectionProtocol, Sendable {
     public typealias Ballot = RankedBallot<BallotID, C>
     
     public var candidates: Array<C>
@@ -30,7 +40,7 @@ public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Electi
     
     public var configuration: ElectionConfiguration = .init()
     
-    public var isCurrentlyRunning: Bool {
+    public var isRunning: Bool {
         return Date() >= configuration.beginDate
     }
     
@@ -61,7 +71,7 @@ public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Electi
     }
     
     mutating public func addEmptyBallot(id: BallotID, with candidates: [C]) {
-        let ballot = Ballot(id: id, rankings: candidates.map { Ballot.CandidateRanking(candidate: $0, rank: nil) })
+        let ballot = Ballot(id: id, rankings: candidates.map { Ballot.Ranking(candidate: $0, rank: nil) })
         self.ballots.append(ballot)
     }
 
@@ -101,7 +111,7 @@ extension RankedElection: Codable {
                     throw CandidateError.couldNotFindCandidate
                 }
                 let candidateID = candidates[index]
-                return Ballot.CandidateRanking(candidate: candidateID, rank: rank)
+                return Ballot.Ranking(candidate: candidateID, rank: rank)
             })
         }
         

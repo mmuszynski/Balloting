@@ -21,9 +21,9 @@ struct MinneapolisMayorTest {
         var ballots: Set<Election.Ballot> = []
         lines.enumerated().forEach { offset, line in
             let components = line.components(separatedBy: ",")
-            let rankings: [Election.Ballot.CandidateRanking] = components[0..<4].dropFirst().compactMap { name in
+            let rankings: [Election.Ballot.Ranking] = components[0..<4].dropFirst().compactMap { name in
                 if name == "XXX" { return nil }
-                return Election.Ballot.CandidateRanking(candidate: name, rank: 0)
+                return Election.Ballot.Ranking(candidate: name, rank: 0)
             }
             
             for _ in 0..<(Int(components[4]) ?? 1) {

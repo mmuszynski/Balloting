@@ -42,19 +42,19 @@ func loadDessertElection() throws -> RankedElection<Date, String> {
             
             switch $0.element {
             case "1st":
-                return Ballot.CandidateRanking(candidate: candidate, rank: 1)
+                return Ballot.Ranking(candidate: candidate, rank: 1)
             case "2nd":
-                return Ballot.CandidateRanking(candidate: candidate, rank: 2)
+                return Ballot.Ranking(candidate: candidate, rank: 2)
             case "3rd":
-                return Ballot.CandidateRanking(candidate: candidate, rank: 3)
+                return Ballot.Ranking(candidate: candidate, rank: 3)
             case "4th":
-                return Ballot.CandidateRanking(candidate: candidate, rank: 4)
+                return Ballot.Ranking(candidate: candidate, rank: 4)
             case "5th":
-                return Ballot.CandidateRanking(candidate: candidate, rank: 5)
+                return Ballot.Ranking(candidate: candidate, rank: 5)
             case "6th":
-                return Ballot.CandidateRanking(candidate: candidate, rank: 6)
+                return Ballot.Ranking(candidate: candidate, rank: 6)
             default:
-                return Ballot.CandidateRanking(candidate: candidate, rank: nil)
+                return Ballot.Ranking(candidate: candidate, rank: nil)
             }
         }
         

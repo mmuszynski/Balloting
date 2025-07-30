@@ -38,7 +38,7 @@ let rawRankings = [
 @MainActor let ballots = rawRankings.enumerated().map { (index, rankings) in
     let ranks = rankings.components(separatedBy: ", ").enumerated().map { (index, rank) in
         let rank = Int(rank)!
-        return RankedBallot<Int, String>.CandidateRanking(candidate: candidates[index], rank: rank == 0 ? nil : rank)
+        return RankedBallot<Int, String>.Ranking(candidate: candidates[index], rank: rank == 0 ? nil : rank)
     }
     return RankedBallot(id: index, rankings: ranks)
 }
@@ -54,9 +54,9 @@ let rawRankings = [
 }
 
 @Test func ballotWithDraw() async throws {
-    let first = RankedBallot<Int, String>.CandidateRanking(candidate: "Chocolate Cake", rank: nil)
-    let second = RankedBallot<Int, String>.CandidateRanking(candidate: "Cheesecake", rank: nil)
-    #expect(RankedBallot.CandidateComparison(candidate1Ranking: first, candidate2Ranking: second).winner == nil)
+    let first = RankedBallot<Int, String>.Ranking(candidate: "Chocolate Cake", rank: nil)
+    let second = RankedBallot<Int, String>.Ranking(candidate: "Cheesecake", rank: nil)
+    #expect(RankedBallot<Int, String>.CandidateComparison(candidate1Ranking: first, candidate2Ranking: second).winner == nil)
 }
 
 @MainActor
