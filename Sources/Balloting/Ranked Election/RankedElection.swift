@@ -40,6 +40,8 @@ public struct RankedElection<BallotID: BallotIdentifiable, C: Candidate>: Ranked
     
     public var configuration: ElectionConfiguration = .init()
     
+    @available(*, unavailable, renamed: "isRunning")
+    public var isCurrentlyRunning: Bool { fatalError() }
     public var isRunning: Bool {
         return Date() >= configuration.beginDate
     }

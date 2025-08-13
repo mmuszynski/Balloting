@@ -7,10 +7,9 @@
 
 import Foundation
 
-public protocol Candidate: Sendable, Hashable, Comparable, Codable, Identifiable {
-    associatedtype ID: CandidateIdentifiable
-    var id: ID { get }
-    var name: String { get }
+public protocol Candidate: Sendable, Hashable, Comparable, Codable, Identifiable where ID: CandidateIdentifiable {
+    var id: ID { get set }
+    var name: String { get set }
 }
 
 extension Candidate {
@@ -22,9 +21,6 @@ extension Candidate {
         String(describing: self)
     }
 }
-
-extension String: Candidate {}
-extension Int: Candidate {}
 
 public protocol CandidateIdentifiable: Equatable & Hashable & Comparable & Codable & Sendable {
     init?(csvString: String)

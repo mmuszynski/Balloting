@@ -151,4 +151,23 @@ struct GoogleFormResultsTest {
         let csvString = election.csvRepresentation()
         print(csvString)
     }
+    
+    @Test
+    func jsonInput() async throws {
+        struct DessertCandidate: Candidate, Comparable {
+            var name: String
+            var id: UUID
+            
+            static func < (lhs: DessertCandidate, rhs: DessertCandidate) -> Bool {
+                return lhs.name < rhs.name
+            }
+        }
+        
+        guard let url = Bundle.module.url(forResource: "GoogleVotes", withExtension: "json") else { fatalError() }
+        let data = try Data(contentsOf: url)
+        #expect(throws: Never.self) {
+            let _ = try JSONDecoder().decode(RankedElection<Int, DessertCandidate>.self, from: data)
+        }
+        
+    }
 }
