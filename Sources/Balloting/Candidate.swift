@@ -10,6 +10,8 @@ import Foundation
 public protocol Candidate: Sendable, Hashable, Comparable, Codable, Identifiable where ID: CandidateIdentifiable {
     var id: ID { get set }
     var name: String { get set }
+    init()
+    init(name: String)
 }
 
 extension Candidate {
