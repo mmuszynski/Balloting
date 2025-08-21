@@ -10,7 +10,7 @@ import Foundation
 @testable import Balloting
 
 struct MinneapolisMayorTest {
-    typealias Election = RankedElection<UUID, String>
+    typealias Election = RankedElection<UUID, TestCandidate>
     let election: Election
     
     init() throws {
@@ -18,12 +18,20 @@ struct MinneapolisMayorTest {
         let string = try String(contentsOf: url, encoding: .utf8)
         
         let lines = string.components(separatedBy: .newlines).dropFirst().filter { !$0.isEmpty }
+        var candidates: [String: TestCandidate] = [:]
+        
         var ballots: Set<Election.Ballot> = []
         lines.enumerated().forEach { offset, line in
             let components = line.components(separatedBy: ",")
-            let rankings: [Election.Ballot.Ranking] = components[0..<4].dropFirst().compactMap { name in
+            let rankings: [Election.Ballot.Ranking] = components[0..<4].dropFirst().enumerated().compactMap { index, name in
                 if name == "XXX" { return nil }
-                return Election.Ballot.Ranking(candidate: name, rank: 0)
+                
+                if candidates[name] == nil {
+                    candidates[name] = TestCandidate(name: name)
+                }
+                
+                let candidate = candidates[name]!
+                return Election.Ballot.Ranking(candidate: candidate, rank: 3 - index)
             }
             
             for _ in 0..<(Int(components[4]) ?? 1) {
@@ -38,10 +46,25 @@ struct MinneapolisMayorTest {
     func minneapolis2009() async throws {
         #expect(throws: Never.self) { try Self.init() }
         
-        var winner: String? = nil
-        let eliminated: Set<String> = []
+        var winner: TestCandidate? = nil
+        var eliminated: Set<TestCandidate> = []
+        
+        let candidates = election.candidates
+        print(candidates.count)
+        
         let round = try IRVRound(election: election, ignoring: eliminated)
         winner = round.majorityCandidate
-        #expect(winner == "RYB")
+        
+        while winner == nil || eliminated.count < candidates.count {
+            let round = try IRVRound(election: election, ignoring: eliminated)
+            winner = round.majorityCandidate
+            if let eliminatedCandidate = round.eliminatedCandidate {
+                eliminated.insert(eliminatedCandidate)
+            } else {
+                break
+            }
+        }
+        
+        #expect(winner?.name == "RYB")
     }
 }

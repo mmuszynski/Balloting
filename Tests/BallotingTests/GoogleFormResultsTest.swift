@@ -11,8 +11,8 @@ import Foundation
 
 //The results of these elections comes from the google form with results at  https://docs.google.com/spreadsheets/d/1PB8zEAj1a-JXScfxqcZd-tM29HOzKN1lE4oOmerUZlw/edit?gid=1301572243#gid=1301572243
 
-func loadDessertElection() throws -> RankedElection<Date, String> {
-    typealias Ballot = RankedBallot<Date, String>
+func loadDessertElection() throws -> RankedElection<Date, TestCandidate> {
+    typealias Ballot = RankedBallot<Date, TestCandidate>
 
     let dateFormatter = {
        let df = DateFormatter()
@@ -25,11 +25,12 @@ func loadDessertElection() throws -> RankedElection<Date, String> {
     let text = try String(contentsOf: url, encoding: .utf8)
     let lines = text.components(separatedBy: .newlines).filter { !$0.isEmpty }
     
-    let candidates: [String] = lines.first!
+    let candidates: [TestCandidate] = lines.first!
         .replacingOccurrences(of: "]    ", with: ",")
         .replacingOccurrences(of: "Please rank the choices for dessert [", with: "")
         .replacingOccurrences(of: "]", with: "")
         .components(separatedBy: ",")
+        .map(TestCandidate.init(name:))
             
     let ballots: [Ballot] = lines.dropFirst().map { line in
         let components = line.components(separatedBy: ", ")
@@ -65,7 +66,7 @@ func loadDessertElection() throws -> RankedElection<Date, String> {
 }
 
 struct GoogleFormResultsTest {
-    let election: RankedElection<Date, String>
+    let election: RankedElection<Date, TestCandidate>
         
     init() async throws {
         election = try loadDessertElection()
@@ -83,16 +84,17 @@ struct GoogleFormResultsTest {
         #expect(roundOne["Pumpkin Pie"] == 4)
         #expect(roundOne["Apple Pie"] == 3)
         #expect(roundOne["Angelfood Cake"] == 0)
-        #expect(roundOne.description == "Chocolate Cake: 10, Carrot Cake: 7, Cheesecake: 4, Pumpkin Pie: 4, Apple Pie: 3, Angelfood Cake: 0")
         
         //This round should produce no winner
         //It should also produce one eliminated candidate, Angelfood Cake
         //No tiebreakers are used, so the tiebreaking history should be empty
         #expect(roundOne.majorityCandidate == nil)
         #expect(roundOne.tiebreakingHistory.isEmpty)
-        #expect(roundOne.eliminatedCandidate == "Angelfood Cake")
+        #expect(roundOne.eliminatedCandidate?.name == "Angelfood Cake")
         
-        let roundTwo = try election.irvRound(ignoring: ["Angelfood Cake"])
+        var eliminatedCandidates = [roundOne.eliminatedCandidate].compactMap(\.self)
+        
+        let roundTwo = try election.irvRound(ignoring: eliminatedCandidates)
         #expect(roundTwo["Chocolate Cake"] == 10)
         #expect(roundTwo["Carrot Cake"] == 7)
         #expect(roundTwo["Cheesecake"] == 4)
@@ -100,7 +102,10 @@ struct GoogleFormResultsTest {
         #expect(roundTwo["Apple Pie"] == 3)
         #expect(roundTwo["Angelfood Cake"] == nil)
         
-        let roundThree = try election.irvRound(ignoring: ["Angelfood Cake", "Apple Pie"])
+        #expect(roundTwo.eliminatedCandidate?.name == "Apple Pie")
+        eliminatedCandidates.append(roundTwo.eliminatedCandidate!)
+        
+        let roundThree = try election.irvRound(ignoring: eliminatedCandidates)
         #expect(roundThree["Chocolate Cake"] == 11)
         #expect(roundThree["Carrot Cake"] == 8)
         #expect(roundThree["Cheesecake"] == 5)
@@ -108,7 +113,10 @@ struct GoogleFormResultsTest {
         #expect(roundThree["Apple Pie"] == nil)
         #expect(roundThree["Angelfood Cake"] == nil)
         
-        let roundFour = try election.irvRound(ignoring: ["Angelfood Cake", "Apple Pie", "Pumpkin Pie"])
+        #expect(roundThree.eliminatedCandidate?.name == "Pumpkin Pie")
+        eliminatedCandidates.append(roundThree.eliminatedCandidate!)
+        
+        let roundFour = try election.irvRound(ignoring: eliminatedCandidates)
         #expect(roundFour["Chocolate Cake"] == 11)
         #expect(roundFour["Carrot Cake"] == 12)
         #expect(roundFour["Cheesecake"] == 5)
@@ -116,7 +124,10 @@ struct GoogleFormResultsTest {
         #expect(roundFour["Apple Pie"] == nil)
         #expect(roundFour["Angelfood Cake"] == nil)
         
-        let roundFive = try election.irvRound(ignoring: ["Angelfood Cake", "Apple Pie", "Pumpkin Pie", "Cheesecake"])
+        #expect(roundFour.eliminatedCandidate?.name == "Cheesecake")
+        eliminatedCandidates.append(roundFour.eliminatedCandidate!)
+
+        let roundFive = try election.irvRound(ignoring: eliminatedCandidates)
         #expect(roundFive["Chocolate Cake"] == 12)
         #expect(roundFive["Carrot Cake"] == 16)
         #expect(roundFive["Cheesecake"] == nil)
@@ -127,8 +138,8 @@ struct GoogleFormResultsTest {
     
     @Test
     func autoIRV() async throws {
-        var winner: String? = nil
-        var eliminated: Set<String> = []
+        var winner: TestCandidate? = nil
+        var eliminated: Set<TestCandidate> = []
         
         let tiebreakerStrategy = [IRVTiebreakingStrategy.failure]
         
@@ -143,7 +154,7 @@ struct GoogleFormResultsTest {
                 break
             }
         }
-        #expect(winner == "Carrot Cake")
+        #expect(winner?.name == "Carrot Cake")
     }
     
     @Test

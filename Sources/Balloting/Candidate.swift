@@ -22,6 +22,15 @@ extension Candidate {
     public var name: String {
         String(describing: self)
     }
+    
+    init() {
+        self.init()
+    }
+    
+    init(name: String) {
+        self.init()
+        self.name = name
+    }
 }
 
 public protocol CandidateIdentifiable: Equatable & Hashable & Comparable & Codable & Sendable {

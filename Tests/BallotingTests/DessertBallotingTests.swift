@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import Balloting
 
-let candidates = ["Chocolate Cake", "Cheesecake", "Apple Pie", "Carrot Cake", "Pumpkin Pie", "Angelfood Cake"]
+let candidates: [TestCandidate] = ["Chocolate Cake", "Cheesecake", "Apple Pie", "Carrot Cake", "Pumpkin Pie", "Angelfood Cake"]
 
 let rawRankings = [
     "0, 2, 4, 1, 3, 5",
@@ -38,13 +38,12 @@ let rawRankings = [
 @MainActor let ballots = rawRankings.enumerated().map { (index, rankings) in
     let ranks = rankings.components(separatedBy: ", ").enumerated().map { (index, rank) in
         let rank = Int(rank)!
-        return RankedBallot<Int, String>.Ranking(candidate: candidates[index], rank: rank == 0 ? nil : rank)
+        return RankedBallot<Int, TestCandidate>.Ranking(candidate: candidates[index], rank: rank == 0 ? nil : rank)
     }
     return RankedBallot(id: index, rankings: ranks)
 }
 
 @MainActor let election = RankedElection(candidates: candidates, ballots: ballots)
-
 
 @Test func example() async throws {
     await #expect(throws: Never.self) {
@@ -54,9 +53,9 @@ let rawRankings = [
 }
 
 @Test func ballotWithDraw() async throws {
-    let first = RankedBallot<Int, String>.Ranking(candidate: "Chocolate Cake", rank: nil)
-    let second = RankedBallot<Int, String>.Ranking(candidate: "Cheesecake", rank: nil)
-    #expect(RankedBallot<Int, String>.CandidateComparison(candidate1Ranking: first, candidate2Ranking: second).winner == nil)
+    let first = RankedBallot<Int, TestCandidate>.Ranking(candidate: "Chocolate Cake", rank: nil)
+    let second = RankedBallot<Int, TestCandidate>.Ranking(candidate: "Cheesecake", rank: nil)
+    #expect(RankedBallot<Int, TestCandidate>.CandidateComparison(candidate1Ranking: first, candidate2Ranking: second).winner == nil)
 }
 
 @MainActor
@@ -79,7 +78,7 @@ let rawRankings = [
     let decoder = JSONDecoder()
     
     let data = try encoder.encode(election)
-    let roundTripElection = try decoder.decode(RankedElection<Int, String>.self, from: data)
+    let roundTripElection = try decoder.decode(RankedElection<Int, TestCandidate>.self, from: data)
     
     #expect(election == roundTripElection)
     

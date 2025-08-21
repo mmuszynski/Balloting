@@ -19,28 +19,29 @@ fileprivate extension String {
 
 /// Describes the counting of a round of Instant Runoff Voting
 public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
-    typealias Ballot = RankedBallot<BallotID, C>
+    public typealias Ballot = RankedBallot<BallotID, C>
     
-    let ballotCount: Int
+    public let ballotCount: Int
     
-    struct Tally {
-        var candidate: C
-        var votes: Int
+    public struct Tally: Identifiable {
+        public var id: C.ID { candidate.id }
+        public var candidate: C
+        public var votes: Int
     }
     
-    let finalTally: [Tally]
+    public let finalTally: [Tally]
     
-    typealias TiebreakResult = (IRVTiebreakingStrategy, [C])
-    let tiebreakingHistory: [TiebreakResult]
-    let majorityCandidate: C?
-    var eliminatedCandidate: C? {
+    public typealias TiebreakResult = (IRVTiebreakingStrategy, [C])
+    public let tiebreakingHistory: [TiebreakResult]
+    public let majorityCandidate: C?
+    public var eliminatedCandidate: C? {
         if tiebreakingHistory.isEmpty { return finalTally.last?.candidate }
         return tiebreakingHistory.last?.1.first
     }
         
-    init(election: RankedElection<BallotID, C>,
-         ignoring eliminatedCandidates: Set<C>,
-         breakingTiesWith tiebreakProcedure: [IRVTiebreakingStrategy] = [.failure]) throws
+    public init(election: RankedElection<BallotID, C>,
+                ignoring eliminatedCandidates: Set<C>,
+                breakingTiesWith tiebreakProcedure: [IRVTiebreakingStrategy] = [.failure]) throws
     {
         try self.init(ballots:  Set(election.ballots),
                       candidates: Set(election.candidates),
@@ -48,10 +49,10 @@ public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
                       breakingTiesWith: tiebreakProcedure)
     }
     
-    init(ballots: Set<RankedBallot<BallotID, C>>,
-         candidates: Set<C>,
-         ignoring eliminatedCandidates: Set<C>,
-         breakingTiesWith tiebreakProcedure: [IRVTiebreakingStrategy] = [.failure]) throws
+    public init(ballots: Set<RankedBallot<BallotID, C>>,
+                candidates: Set<C>,
+                ignoring eliminatedCandidates: Set<C>,
+                breakingTiesWith tiebreakProcedure: [IRVTiebreakingStrategy] = [.failure]) throws
     {
         self.ballotCount = ballots.count
         let tally = try IRVRound.tally(ballots: ballots, using: candidates, ignoring: eliminatedCandidates)
@@ -108,8 +109,10 @@ public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
         
         for ballot in ballots {
             let rankings = ballot.sortedByRank()
-            if let candidate = rankings.first(where: { candidates.contains($0.candidate) } )?.candidate {
-                incrementVote(for: candidate)
+            if let ranking = rankings.first(where: { candidates.contains($0.candidate) }),
+               ranking.rank ?? 0 > 0
+            {
+                incrementVote(for: ranking.candidate)
             }
         }
         
@@ -119,6 +122,11 @@ public struct IRVRound<BallotID: BallotIdentifiable, C: Candidate> {
     /// Returns the vote count for a given candidate
     subscript(_ candidate: C) -> Int? {
         return finalTally.first(where: { $0.candidate.id == candidate.id })?.votes
+    }
+    
+    /// Returns the vote count for a given candidate name
+    subscript(_ name: String) -> Int? {
+        return finalTally.first(where: { $0.candidate.name == name })?.votes
     }
 }
 

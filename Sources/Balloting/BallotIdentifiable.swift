@@ -14,11 +14,17 @@ public protocol BallotIdentifiable: Hashable & Comparable & Codable & Sendable {
     //This is a requirement to create a new ballot
     static var new: Self { get }
     init()
+    
+    var stringValue: String { get }
 }
 
 extension BallotIdentifiable {
     public static var new: Self {
         Self.init()
+    }
+    
+    public var stringValue: String {
+        String(describing: self)
     }
 }
 

@@ -47,6 +47,10 @@ public struct BordaCount<C: Candidate> {
     public subscript(_ candidate: C) -> Int? {
         store.first { $0.candidate == candidate }?.value
     }
+    
+    public subscript(_ name: String) -> Int? {
+        store.first { $0.candidate.name == name }?.value
+    }
 }
 
 extension BordaCount: Collection {

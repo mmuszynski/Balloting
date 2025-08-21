@@ -10,7 +10,7 @@ import Foundation
 @testable import Balloting
 
 struct CondorcetTests {
-    typealias Election = RankedElection<Date, Int>
+    typealias Election = RankedElection<Date, TestCandidate>
     let election = try! loadDessertElection()
     
     @Test
